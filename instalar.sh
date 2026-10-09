@@ -174,13 +174,22 @@ for s in commit-oas planificar-issue endpoint-oas crud-oas mid-oas seguridad-oas
 done
 [ -f "$HOME/.claude/agents/contexto-proyecto.md" ] && MANUAL+=("$HOME/.claude/agents/contexto-proyecto.md")
 for f in contexto-proyecto.py reglas-udistrital.py skill-guard.py git-guard.py shell_cmd.py tests; do
-  [ -e "$HOME/.claude/scripts/$f" ] && MANUAL+=("$HOME/.claude/scripts/$f")
+  # los sustitutos (oas-shim) que deja una migración previa no cuentan como instalación manual
+  [ -e "$HOME/.claude/scripts/$f" ] && ! grep -qs "oas-shim" "$HOME/.claude/scripts/$f" && MANUAL+=("$HOME/.claude/scripts/$f")
 done
 if [ ${#MANUAL[@]} -gt 0 ]; then
   titulo "Instalación manual previa en ~/.claude"
   if [ "$MIGRAR" = 1 ] && [ "$SOLO_VERIFICAR" = 0 ]; then
     DEST="$CONFIG_DIR/respaldo-manual-$FECHA"; mkdir -p "$DEST"
     for m in "${MANUAL[@]}"; do mv "$m" "$DEST/" && c_ok "Movido a respaldo: $m"; done
+    # Las sesiones de Claude Code abiertas cargaron sus hooks al iniciar y siguen llamando a estos scripts:
+    # si no existen, el hook falla y puede bloquear la sesión. Se dejan sustitutos que no hacen nada.
+    for f in contexto-proyecto.py reglas-udistrital.py skill-guard.py git-guard.py; do
+      if [ -e "$DEST/$f" ] && [ ! -e "$HOME/.claude/scripts/$f" ]; then
+        printf '#!/usr/bin/env python3\n# oas-shim: sustituto temporal tras migrar al plugin oas. Las sesiones abiertas antes de la\n# migración aún llaman a este hook; las nuevas ya no. Se puede borrar después de reiniciar Claude Code.\nimport sys\nsys.stdin.read()\n' > "$HOME/.claude/scripts/$f"
+      fi
+    done
+    c_av "Quedan sustitutos vacíos (oas-shim) en ~/.claude/scripts para las sesiones abiertas: cierra y abre Claude Code; luego puedes borrarlos."
     if [ -f "$HOME/.claude/settings.json" ]; then
       respaldar "$HOME/.claude/settings.json"
       python3 - "$HOME/.claude/settings.json" <<'PY'
