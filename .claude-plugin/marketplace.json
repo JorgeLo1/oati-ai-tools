@@ -1,0 +1,12 @@
+{
+  "name": "oas-udistrital",
+  "description": "Herramientas de IA del equipo para los repositorios udistrital (OAS)",
+  "owner": { "name": "Equipo SISIFO - OAS Universidad Distrital" },
+  "plugins": [
+    {
+      "name": "oas",
+      "source": "./",
+      "description": "Planificación de issues, skills de lineamientos OAS, contexto por módulos y guardianes del flujo"
+    }
+  ]
+}

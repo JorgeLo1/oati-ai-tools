@@ -1,0 +1,3 @@
+#!/bin/sh
+# oas-ai-tools: hook de git del equipo (ver oas_git_hooks.py)
+exec python3 "$(dirname "$0")/oas_git_hooks.py" commit-msg "$@"
