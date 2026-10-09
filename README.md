@@ -30,7 +30,7 @@ Funciona completo en **Claude Code** (como plugin) y se puede portar a **otras I
 | **Agente de contexto** | Genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local) | [agents/](agents/) |
 | **Guardianes (Claude Code)** | Bloquean código sin plan aprobado o sin la skill del dominio, commits sin revisión de seguridad, push/PR, atribución a IA, edición de `.env` | [scripts/](scripts/), [hooks/hooks.json](hooks/hooks.json) |
 | **Hooks de git** | Validan rama GitFlow, etiqueta del commit, atribución a IA y secretos **en cualquier herramienta** | [git-hooks/](git-hooks/) |
-| **Contrato y pruebas** | Qué debe hacer cada control y 85 casos de aceptación; base para portar a otras IAs | [spec/](spec/) |
+| **Contrato y pruebas** | Qué debe hacer cada control y sus casos de aceptación; base para portar a otras IAs | [spec/](spec/) |
 
 Nada de esto se commitea en los repositorios institucionales: las reglas viven en la carpeta que agrupa los repos (no es un repo git), el contexto de cada repo en `.claude/` (excluido de git) y las especificaciones en `<udistrital>/.claude/specs/`.
 
@@ -139,7 +139,9 @@ Para desactivar los guardianes en un repo puntual, crea el archivo vacío `<repo
 
 - La primera vez que trabajas en un repo sin contexto, el agente genera `.claude/CLAUDE.md` y `.claude/docs/` por módulos (en segundo plano).
 - Cuando traes cambios de otras personas (`git pull`, merge, checkout), el agente actualiza sólo los documentos afectados. Tus propios commits los documentas con `/oas:documentar-cambios`.
-- Estado: `python3 ~/oati-ai-tools/scripts/contexto-proyecto.py estado` dentro del repo.
+- Está organizado por **dominios del negocio** con los mismos nombres y números en MF, MID y CRUD (por ejemplo `05-plan-mejoramiento.md` en los tres), y cada dominio enlaza a su equivalente en los otros repos. El índice (`.claude/docs/README.md`) dice qué leer según la tarea.
+- Para llevar un contexto existente a esta estructura: pide *"reorganiza el contexto del proyecto"*.
+- Estado: `python3 ~/oati-ai-tools/scripts/contexto-proyecto.py estado` dentro del repo. Calidad: `python3 ~/oati-ai-tools/scripts/verificar_contexto.py <repo>`.
 
 ## Preguntas frecuentes
 
@@ -176,7 +178,7 @@ skills/ agents/   skills y agente (formato abierto SKILL.md)
 hooks/hooks.json  hooks del plugin de Claude Code
 scripts/          guardianes y avisos (Python, sin dependencias) + tests/run_casos.py
 git-hooks/        hooks de git del equipo + tests/test_git_hooks.sh
-spec/             contratos.md (R0–R13, A1–A3, H1–H2) y casos.json (85 casos)
+spec/             contratos.md (R0–R13, A1–A3, H1–H2) y casos.json (casos de aceptación)
 plantillas/       CLAUDE.md para la carpeta udistrital
 instalar.sh desinstalar.sh
 ```
@@ -184,7 +186,8 @@ instalar.sh desinstalar.sh
 Antes de publicar un cambio:
 
 ```bash
-python3 scripts/tests/run_casos.py            # 85 casos de los guardianes
+python3 scripts/tests/run_casos.py            # casos de los guardianes (spec/casos.json)
+python3 scripts/tests/test_verificar_contexto.py   # verificador de contexto
 bash git-hooks/tests/test_git_hooks.sh        # hooks de git
 claude plugin validate --strict .             # catálogo
 claude plugin validate --strict .claude-plugin/plugin.json skills agents

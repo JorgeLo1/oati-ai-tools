@@ -2,6 +2,12 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.1.0 · 2026-10-09
+
+- Agente `contexto-proyecto`: el contexto se organiza por **dominios funcionales comunes entre repos** (MF, MID y CRUD con los mismos nombres y números; adopta la numeración de un repo hermano que ya tenga contexto), con documentos transversales según el tipo de repo, plantilla fija por dominio con "En otros repos" (enlaces reales MF → MID → CRUD) y "Trampas", tablas generadas por script entre marcadores, índice orientado a tareas y límites de tamaño.
+- Nuevo MODO `reorganizar` para llevar un contexto existente a esa estructura sin perder contenido.
+- Nuevo `scripts/verificar_contexto.py`: tamaños, enlaces (también entre repos), índice completo, bloques generados y secretos; el agente debe dejarlo en verde.
+
 ## 1.0.2 · 2026-10-09
 
 - `instalar.sh --migrar-desde-manual`: deja sustitutos vacíos (`oas-shim`) en `~/.claude/scripts` para las sesiones de Claude Code abiertas antes de migrar, que siguen llamando a los hooks anteriores (sin ellos, el hook fallaba y podía bloquear la sesión). Los sustitutos no cuentan como instalación manual en ejecuciones posteriores.

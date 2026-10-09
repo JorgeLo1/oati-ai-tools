@@ -87,7 +87,15 @@ Para el repo del directorio de trabajo (y los destinos de `git clone`/`init`/`pu
 - Opt-out por repo: archivo `.claude/.contexto-off` (lo crea el usuario).
 
 ### A3 — Agente `contexto-proyecto`
-Modos `generar`, `actualizar`, `documentar` (ver `agents/contexto-proyecto.md`). Sólo escribe en `<REPO>/.claude/`; nunca hace git add/commit/push/checkout; agrega `.claude/` a `.git/info/exclude`; al terminar `generar`/`actualizar` mueve la marca a `HEAD` (`documentar` no la mueve).
+Modos `generar`, `reorganizar`, `actualizar`, `documentar` (ver `agents/contexto-proyecto.md`). Sólo escribe en `<REPO>/.claude/`; nunca hace git add/commit/push/checkout; agrega `.claude/` a `.git/info/exclude`; al terminar `generar`/`actualizar` mueve la marca a `HEAD` (`documentar` no la mueve).
+
+Estructura exigida:
+- **Por dominio funcional**, no por carpeta técnica, con **los mismos dominios, nombres y números en todos los repos del sistema** (el sistema es la primera carpeta bajo `<UDISTRITAL>`; si un repo hermano ya tiene contexto, se adopta su numeración).
+- `CLAUDE.md` ≤ 80 líneas; cada documento ≤ 300 líneas salvo los que contienen tablas generadas; `docs/README.md` es un índice orientado a tareas y lista todos los documentos.
+- Documentos transversales según el tipo de repo (MF: estados y flujos, acciones por rol, notificaciones, servicios y endpoints; MID: endpoints, integraciones, reglas y estados; CRUD: modelo de datos, endpoints y filtros).
+- Cada dominio tiene la sección "En otros repos" con enlaces relativos reales a los documentos (o archivos) de los repos hermanos.
+- Las tablas derivables de una fuente única se generan con un script registrado en `CLAUDE.md` y van entre `<!-- generado:inicio <comando> -->` y `<!-- generado:fin -->`.
+- Antes de terminar, `scripts/verificar_contexto.py <REPO>` debe pasar (tamaños, enlaces, índice, bloques generados, secretos).
 
 ## Hooks de git del equipo (cualquier herramienta y personas)
 

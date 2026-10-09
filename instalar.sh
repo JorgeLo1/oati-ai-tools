@@ -221,6 +221,8 @@ if [ "$SIN_PRUEBAS" = 0 ]; then
   else c_er "Hooks de git: fallaron pruebas (ver /tmp/oas-test-hooks.log)"; fi
   if python3 "$RAIZ_REPO/scripts/tests/run_casos.py" > /tmp/oas-test-casos.log 2>&1; then c_ok "Guardianes (spec/casos.json): $(tail -1 /tmp/oas-test-casos.log)"
   else c_er "Guardianes: fallaron casos (ver /tmp/oas-test-casos.log)"; fi
+  if python3 "$RAIZ_REPO/scripts/tests/test_verificar_contexto.py" > /tmp/oas-test-verif.log 2>&1; then c_ok "Verificador de contexto: $(tail -1 /tmp/oas-test-verif.log)"
+  else c_er "Verificador de contexto: fallaron pruebas (ver /tmp/oas-test-verif.log)"; fi
 fi
 
 # ------------------------------------------------------------------ resumen

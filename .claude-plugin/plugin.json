@@ -1,7 +1,7 @@
 {
   "name": "oas",
   "displayName": "OAS · Herramientas de IA para repos udistrital",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Flujo de trabajo OAS para repositorios udistrital: planificación spec-driven de issues, skills de lineamientos (commits/ramas, endpoints, CRUD, MID, seguridad, documentación), contexto del proyecto por módulos y guardianes que hacen cumplir el flujo.",
   "author": {
     "name": "Equipo SISIFO - OAS Universidad Distrital"
