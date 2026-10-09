@@ -19,7 +19,7 @@ Especificaciones (<udistrital>/.claude/specs/*.md):
   - borrador -> aprobada/en-implementacion/implementada exige respuesta "Aprobar plan…" del usuario
   - -> omitida exige "Omitir planificación…"; cambiar rama/repos de una aprobada exige "Aprobar cambio…"
     (en una pregunta AskUserQuestion que mencione el nombre del archivo; cada aprobación se usa una vez)
-Commits: exigen /commit-oas y, si incluyen código, /seguridad-oas. Stop: tras un commit real, /documentar-cambios.
+Commits: exigen /commit-oas y, si incluyen código, /seguridad-oas. Stop: tras un commit real en un repo udistrital, /documentar-cambios.
 Configuración del sistema (plugin oas-ai-tools, ~/.claude/{skills,agents,scripts,plugins}, settings, ~/.config/oas-ai-tools,
 <udistrital>/CLAUDE.md y AGENTS.md, archivos -off): editar pide confirmación.
 Lectura de .env: pide confirmación (herramienta Read o Bash).
@@ -114,7 +114,7 @@ def leer_transcript(transcript):
             if tipo == "tool_use" and it.get("name") == "Skill":
                 eventos.append(("skill", str((it.get("input") or {}).get("skill", "")).split(":")[-1]))
             elif tipo == "tool_use" and it.get("name") == "Bash":
-                eventos.append(("bash", (it.get("input") or {}).get("command", ""), it.get("id", "")))
+                eventos.append(("bash", (it.get("input") or {}).get("command", ""), it.get("id", ""), d.get("cwd")))
             elif tipo == "text":
                 eventos += [("skill", n.split(":")[-1]) for n in re.findall(r"<command-name>/?([^<\s]+)</command-name>", it.get("text", ""))]
             elif tipo == "tool_result":
@@ -131,11 +131,12 @@ def uso_skill(evs, nombre):
     return any(e[0] == "skill" and e[1] == nombre for e in evs)
 
 
-def es_commit(cmd, cwd):
+def dirs_commit(cmd, cwd):
+    """Directorios donde el comando hace `git commit` (resuelve cd, git -C, bash -c, alias)."""
     segs = shell_cmd.segmentos(cmd, cwd)
     if segs is None:
-        return bool(re.search(r"\bgit(?:\s+-[cC]\s+\S+)*\s+commit\b", cmd))
-    return any((g := shell_cmd.git_subcomando(s)) and g[0] == "commit" for s in segs)
+        return [cwd] if re.search(r"\bgit(?:\s+-[cC]\s+\S+)*\s+commit\b", cmd) else []
+    return [g[2] for s in segs if (g := shell_cmd.git_subcomando(s)) and g[0] == "commit"]
 
 
 def cabecera(texto):
@@ -402,8 +403,8 @@ def stop(datos):
     ctx = contexto(datos)
     evs, res = ctx["eventos"], ctx["resultados"]
 
-    def commit_real(e):  # ejecutado, sin error y con la salida "[rama hash] mensaje"
-        if e[0] != "bash" or not es_commit(e[1], cwd):
+    def commit_real(e):  # en un repo udistrital, ejecutado sin error y con la salida "[rama hash] mensaje"
+        if e[0] != "bash" or not any(bajo(d, RAIZ) for d in dirs_commit(e[1], e[3] or cwd)):
             return False
         error, texto = res.get(e[2], (True, ""))
         return not error and bool(RE_COMMIT_OK.search(texto))

@@ -2,6 +2,11 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.0.1 · 2026-10-09
+
+- Guardián (R13): el aviso de cerrar con `documentar-cambios` sólo cuenta commits hechos en repos udistrital. El repo de cada commit se determina por el directorio donde se ejecutó el comando, sus `cd` y `git -C`. Antes, un commit en un repo ajeno disparaba el aviso si la sesión estaba abierta en la carpeta udistrital.
+- Casos F06–F08 en `spec/casos.json`; el ejecutor de casos acepta el directorio de cada comando de la sesión.
+
 ## 1.0.0 · 2026-10-09
 
 Primera versión compartible.

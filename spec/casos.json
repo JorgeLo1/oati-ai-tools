@@ -114,6 +114,9 @@
     {"id": "F02", "regla": "R13", "titulo": "fin de turno tras un commit silencioso (-q, sin salida)", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["git commit -qm x", ""]]}, "esperado": "permitir"},
     {"id": "F03", "regla": "R13", "titulo": "fin de turno tras un texto que menciona git commit", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["echo 'git commit'", "[feature/x 1a2b3c4] x"]]}, "esperado": "permitir"},
     {"id": "F04", "regla": "R13", "titulo": "fin de turno con documentar-cambios después del commit", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["git commit -m x", "[feature/x 1a2b3c4] x"]], "skills_despues": ["documentar-cambios"]}, "esperado": "permitir"},
-    {"id": "F05", "regla": "R13", "titulo": "documentar-cambios ANTES del commit no cuenta", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"skills": ["documentar-cambios"], "comandos": [["git commit -m x", "[feature/x 1a2b3c4] x"]]}, "esperado": "bloquear"}
+    {"id": "F05", "regla": "R13", "titulo": "documentar-cambios ANTES del commit no cuenta", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"skills": ["documentar-cambios"], "comandos": [["git commit -m x", "[feature/x 1a2b3c4] x"]]}, "esperado": "bloquear"},
+    {"id": "F06", "regla": "R13", "titulo": "commit con cd a un repo fuera de udistrital no cuenta", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["cd /tmp && git commit -m x", "[main 1a2b3c4] x"]]}, "esperado": "permitir"},
+    {"id": "F07", "regla": "R13", "titulo": "commit ejecutado desde un directorio fuera de udistrital no cuenta", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["git commit -m x", "[main 1a2b3c4] x", "/tmp"]]}, "esperado": "permitir"},
+    {"id": "F08", "regla": "R13", "titulo": "git -C hacia un repo udistrital desde fuera sí cuenta", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["git -C {CRUD} commit -m x", "[develop 1a2b3c4] x", "/tmp"]]}, "esperado": "bloquear"}
   ]
 }

@@ -72,7 +72,7 @@ Si el **mensaje** del commit (`-m`, `--message`, `-F`, heredocs del comando) con
 `--no-verify` (o `-n` en commit) en commit/push/merge/rebase/am/cherry-pick, o la variable `OAS_HOOKS_OMITIR` en el comando → **bloquear**.
 
 ### R13 — Documentar al cerrar
-Al terminar un turno de la IA dentro de `<UDISTRITAL>`, si hubo un commit real en la sesión y `documentar-cambios` no se usó **después** de ese commit → **bloquear una sola vez por commit** con la indicación: "si la tarea quedó cerrada, invoca documentar-cambios; si continúa, dilo en una línea y termina". Si la herramienta no permite forzar la continuación, convertirlo en un recordatorio visible.
+Al terminar un turno de la IA dentro de `<UDISTRITAL>`, si hubo un commit real **en un repo udistrital** en la sesión (se determina el repo por el directorio donde se ejecutó el comando, sus `cd` y `git -C`; un commit en un repo fuera de `<UDISTRITAL>` no cuenta) y `documentar-cambios` no se usó **después** de ese commit → **bloquear una sola vez por commit** con la indicación: "si la tarea quedó cerrada, invoca documentar-cambios; si continúa, dilo en una línea y termina". Si la herramienta no permite forzar la continuación, convertirlo en un recordatorio visible.
 
 ## Avisos y contexto
 

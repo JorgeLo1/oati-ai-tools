@@ -49,7 +49,7 @@ def spec(estado, repos):
             f"estado: {estado}\nactualizado: 2026-10-08\n---\n# T\n")
 
 
-def transcript(base, sesion):
+def transcript(base, sesion, mapa=None):
     p = os.path.join(base, f"t-{uuid.uuid4().hex}.jsonl")
     lineas = []
 
@@ -63,9 +63,13 @@ def transcript(base, sesion):
         lineas.append({"message": {"content": [{"type": "tool_use", "name": "AskUserQuestion", "id": tid, "input": {}}]}})
         lineas.append({"toolUseResult": {"questions": [], "answers": {preg: resp}},
                        "message": {"content": [{"type": "tool_result", "tool_use_id": tid, "content": "ok"}]}})
-    for cmd, salida in sesion.get("comandos", []):
+    for entrada in sesion.get("comandos", []):
+        cmd, salida = sustituir(entrada[0], mapa or {}), entrada[1]
         tid = uuid.uuid4().hex
-        lineas.append({"message": {"content": [{"type": "tool_use", "name": "Bash", "id": tid, "input": {"command": cmd}}]}})
+        linea = {"message": {"content": [{"type": "tool_use", "name": "Bash", "id": tid, "input": {"command": cmd}}]}}
+        if len(entrada) > 2:  # directorio donde se ejecutó el comando
+            linea["cwd"] = sustituir(entrada[2], mapa or {})
+        lineas.append(linea)
         lineas.append({"message": {"content": [{"type": "tool_result", "tool_use_id": tid, "content": salida}]}})
     for s in sesion.get("skills_despues", []):
         skill(s)
@@ -77,7 +81,7 @@ def transcript(base, sesion):
 def ejecutar(caso, mapa, base, nonce, env):
     sesion = caso.get("sesion", {})
     sid = f"casos-{nonce}-{sesion.get('id', caso['id'])}"
-    datos = {"session_id": sid, "transcript_path": transcript(base, sesion), "cwd": sustituir(caso.get("cwd", "{MF}"), mapa)}
+    datos = {"session_id": sid, "transcript_path": transcript(base, sesion, mapa), "cwd": sustituir(caso.get("cwd", "{MF}"), mapa)}
     ev = caso["evento"]
     if ev in ("edicion", "escritura"):
         datos["tool_name"] = "Edit" if ev == "edicion" else "Write"
