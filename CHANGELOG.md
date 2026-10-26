@@ -2,6 +2,12 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.4.1 · 2026-10-26
+
+- Recordatorio `[reglas-udistrital]`: la suite completa va en `/seguridad-oas` y los tests que rompe un cambio son de quien lo hace; `/release-oas` para releases; en MF, `/pruebas-funcionales-oas` antes de cerrar issues con interfaz.
+- `commit-oas`: texto del PR con sección **Pruebas** (resultado real de la suite, preexistentes, specs agregados o ajustados, pruebas funcionales). Mientras el pipeline no ejecute las pruebas, es la evidencia del PR; `code-review-oas` la exige como ajuste requerido.
+- Caso G20 (escape `OAS_PRUEBAS_OMITIR` desde la IA → bloquear) y contratos A1, A2 y R12 actualizados.
+
 ## 1.4.0 · 2026-10-26
 
 - Pruebas compartidas (`AGENTS.md` §8): quien cambia un contrato arregla los tests que rompe; suite completa antes del PR; nunca borrar, saltar ni debilitar un test ajeno; comportamiento nuevo con su test; specs nuevos por caso de uso con datos en `test/fixtures/<modulo>.ts`.

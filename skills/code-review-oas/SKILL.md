@@ -141,7 +141,7 @@ Sin descargar el PR, con lo que muestra el diff:
 - Contrato cambiado (respuesta del CRUD, forma de `Data`, firma de un servicio compartido): busca en el repo local (`grep` en `src/**/*.spec.ts` y `test/fixtures/`) los specs que usan ese contrato y no aparecen en el diff; probablemente quedan rotos.
 - Tests ajenos borrados, saltados (`skip`, `xit`, `xdescribe`, `test.fixme`) o debilitados (aserciones quitadas, `toBeDefined()` en lugar del valor) sin explicación en el PR: vale un comentario propio.
 - Specs nuevos que no siguen la convención (un spec por caso de uso, datos en `test/fixtures/<modulo>.ts`): nota opcional, junto con los detalles de forma.
-- No ejecutes la suite (no hay checkout). Si el PR dice que las pruebas pasan sin evidencia, pídela en una línea.
+- No ejecutes la suite (no hay checkout). Mientras el pipeline no ejecute las pruebas, la evidencia va en la sección **Pruebas** del PR (formato de `/commit-oas` paso 6): si falta, o dice "pasan" sin el resultado (suites, tests, preexistentes), pídela; es un ajuste requerido, no una sugerencia.
 
 ## Fase 5 — Verificar antes de reportar
 

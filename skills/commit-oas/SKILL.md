@@ -160,3 +160,18 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
 5. Cierre: informa la rama, el hash y el mensaje del commit. Ofrece, sin ejecutar:
    - `git push -u origin <rama>` y un Pull Request: `feature/` hacia `develop`; `hotfix/` hacia `master` y `develop`; `release/` hacia `master` y `develop`.
    - Recordatorio del lineamiento de limpieza: eliminar la rama una vez integrada a la línea base.
+
+6. **Texto del PR** (cuando lo pida el usuario o al cerrar la tarea). Mientras el pipeline no ejecute las pruebas, el PR lleva la evidencia (`AGENTS.md` §8), y sin esa sección el revisor no aprueba:
+
+   ```markdown
+   ## Resumen
+   <qué cambia y por qué> · Issue: <org/repo#N>
+
+   ## Pruebas
+   - Suite completa: `<comando>` → <N suites, N tests: N pasan, N fallan> (resultado real de esta rama)
+   - Fallos preexistentes (también fallan en la base): <specs o "ninguno"> · Suite que no arranca: <sí/no>
+   - Specs agregados/actualizados: <archivos>; tests ajenos ajustados por cambio de contrato: <archivos y motivo, o "ninguno">
+   - Pruebas funcionales: <informe de /pruebas-funcionales-oas o "no aplica">
+   ```
+
+   Usa el resultado que obtuvo `/seguridad-oas` en esta sesión; si no lo hay, corre la suite antes de redactarlo. Nunca escribas "pasan" sin haberlo visto.

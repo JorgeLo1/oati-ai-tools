@@ -23,7 +23,8 @@ def tipo_repo(cwd):
     pkg = os.path.join(root, "package.json")
     deps = open(pkg).read() if os.path.exists(pkg) else ""
     if os.path.exists(os.path.join(root, "angular.json")):
-        return nombre, "MF Angular", "/endpoint-oas si cambias rutas que consume; la lógica de backend va en el MID"
+        return nombre, "MF Angular", ("/endpoint-oas si cambias rutas que consume; la lógica de backend va en el MID; "
+                                      "flujos con interfaz → /pruebas-funcionales-oas antes de cerrar la issue")
     stack = "Go/Beego" if os.path.exists(os.path.join(root, "go.mod")) else "NestJS" if "@nestjs/core" in deps else None
     if nombre.endswith("_crud") or "@nestjs/mongoose" in deps:
         return nombre, f"API CRUD ({stack or '?'})", "/crud-oas + /endpoint-oas"
@@ -44,8 +45,10 @@ def main():
     texto = (
         f"[reglas-udistrital] Repo `{nombre}` ({tipo}). Aplica sin esperar a que el usuario lo pida "
         f"(detalle en {RAIZ}/AGENTS.md): tarea nueva → /commit-oas (rama) y /planificar-issue (especificación aprobada antes de codificar); código → {skills}; "
-        "al terminar de implementar → /seguridad-oas sobre el diff; commit → /commit-oas con confirmación; "
-        "tarea cerrada → /documentar-cambios; lee .claude/docs antes de tocar un módulo. "
+        "al terminar de implementar → /seguridad-oas sobre el diff (incluye la suite completa de pruebas; los tests que "
+        "rompas, aunque sean de otras personas, son tuyos); commit → /commit-oas con confirmación; "
+        "tarea cerrada → /documentar-cambios; release o paso a pruebas/producción → /release-oas; "
+        "lee .claude/docs antes de tocar un módulo. "
         "Si el mensaje del usuario no implica trabajo de código (pregunta, charla), ignora este recordatorio."
     )
     evento = datos.get("hook_event_name", "UserPromptSubmit")

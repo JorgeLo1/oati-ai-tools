@@ -69,7 +69,7 @@ Mencionar "git commit" en un texto, `echo` o heredoc **no** es un commit.
 Si el **mensaje** del commit (`-m`, `--message`, `-F`, heredocs del comando) contiene `Co-Authored-By`, `Claude`, `Anthropic`, `Generated with`, `noreply@anthropic`, 🤖 o las siglas `IA`/`AI`/`LLM` como palabra → **bloquear**. Lo que aparezca fuera del mensaje (rutas como `~/.claude`) no cuenta. Sin atribución → **confirmar**.
 
 ### R12 — No saltarse los hooks de git
-`--no-verify` (o `-n` en commit) en commit/push/merge/rebase/am/cherry-pick, o la variable `OAS_HOOKS_OMITIR` en el comando → **bloquear**.
+`--no-verify` (o `-n` en commit) en commit/push/merge/rebase/am/cherry-pick, o las variables `OAS_HOOKS_OMITIR` u `OAS_PRUEBAS_OMITIR` en el comando → **bloquear**.
 
 ### R13 — Documentar al cerrar
 Al terminar un turno de la IA dentro de `<UDISTRITAL>`, si hubo un commit real **en un repo udistrital** en la sesión (se determina el repo por el directorio donde se ejecutó el comando, sus `cd` y `git -C`; un commit en un repo fuera de `<UDISTRITAL>` no cuenta) y `documentar-cambios` no se usó **después** de ese commit → **bloquear una sola vez por commit** con la indicación: "si la tarea quedó cerrada, invoca documentar-cambios; si continúa, dilo en una línea y termina". Si la herramienta no permite forzar la continuación, convertirlo en un recordatorio visible.
@@ -77,12 +77,12 @@ Al terminar un turno de la IA dentro de `<UDISTRITAL>`, si hubo un commit real *
 ## Avisos y contexto
 
 ### A1 — Recordatorio de reglas (cada mensaje del usuario)
-Si el directorio de trabajo está dentro de `<UDISTRITAL>`, agregar al contexto de la IA un recordatorio de una línea con el tipo de repo y las skills que aplican (ver `scripts/reglas-udistrital.py`), indicando que lo ignore si el mensaje no implica trabajo de código.
+Si el directorio de trabajo está dentro de `<UDISTRITAL>`, agregar al contexto de la IA un recordatorio de una línea con el tipo de repo y las skills que aplican (ver `scripts/reglas-udistrital.py`), indicando que lo ignore si el mensaje no implica trabajo de código. Incluye que `/seguridad-oas` corre la suite completa y que los tests rotos por el cambio son de quien lo hace, `/release-oas` para releases y, en MF, `/pruebas-funcionales-oas` antes de cerrar issues con interfaz.
 
 ### A2 — Contexto del proyecto (inicio de sesión, cada mensaje y tras comandos git de la IA)
 Para el repo del directorio de trabajo (y los destinos de `git clone`/`init`/`pull`… que ejecute la IA):
 - Proyecto con código y sin `.claude/CLAUDE.md` + `.claude/docs/` → pedir a la IA que lance el agente `contexto-proyecto` en **MODO generar** (en segundo plano).
-- Con contexto y marca `.claude/.contexto-sync` distinta de `HEAD`: si entre la marca y `HEAD` hay commits de **otros autores** (correo distinto de `git config user.email`) que tocan archivos fuera de `.claude/` → pedir **MODO actualizar** con el rango, la lista de commits y archivos; si sólo hay commits propios → mover la marca en silencio. Un aviso por sesión y `HEAD`.
+- Con contexto y marca `.claude/.contexto-sync` distinta de `HEAD`: si entre la marca y `HEAD` hay commits de **otros autores** (correo distinto de `git config user.email`) que tocan archivos fuera de `.claude/` → pedir **MODO actualizar** con el rango, la lista de commits y archivos (y, si tocan código, correr `git-hooks/oas_pruebas.py --desde <marca>` y reportar qué falla y de qué autor, sin corregir código ajeno); si sólo hay commits propios → mover la marca en silencio. Un aviso por sesión y `HEAD`.
 - Sin marca y con contexto → crear la marca en `HEAD` en silencio.
 - Opt-out por repo: archivo `.claude/.contexto-off` (lo crea el usuario).
 

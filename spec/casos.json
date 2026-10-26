@@ -109,6 +109,7 @@
     {"id": "G17", "componente": "git", "regla": "R12", "titulo": "commit --no-verify", "evento": "comando", "comando": "git commit --no-verify -m 'feat: x'", "cwd": "{MF}", "esperado": "bloquear"},
     {"id": "G18", "componente": "git", "regla": "R12", "titulo": "commit -n (no-verify corto)", "evento": "comando", "comando": "git commit -nm 'feat: x'", "cwd": "{MF}", "esperado": "bloquear"},
     {"id": "G19", "componente": "git", "regla": "R12", "titulo": "escape de los hooks de git desde la IA", "evento": "comando", "comando": "OAS_HOOKS_OMITIR=1 git commit -m 'wip'", "cwd": "{MF}", "esperado": "bloquear"},
+    {"id": "G20", "componente": "git", "regla": "R12", "titulo": "escape de las pruebas del pre-commit desde la IA", "evento": "comando", "comando": "OAS_PRUEBAS_OMITIR=1 git commit -m 'fix: x'", "cwd": "{FEAT}", "sesion": {"skills": ["commit-oas", "seguridad-oas"]}, "esperado": "bloquear"},
 
     {"id": "F01", "regla": "R13", "titulo": "fin de turno tras un commit real sin documentar", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["git commit -m x", "[feature/x 1a2b3c4] x"]]}, "esperado": "bloquear"},
     {"id": "F02", "regla": "R13", "titulo": "fin de turno tras un commit silencioso (-q, sin salida)", "evento": "fin_de_turno", "cwd": "{MF}", "sesion": {"comandos": [["git commit -qm x", ""]]}, "esperado": "permitir"},
