@@ -12,7 +12,7 @@ Reglas de equipo para pruebas en módulos compartidos: `AGENTS.md` §8.
 ## Paso 0 — Alcance y prerrequisitos
 
 1. Issue y especificación (`<UDISTRITAL>/.claude/specs/<repo>-<n>.md`): de su tabla "Criterios de aceptación → verificación" salen los escenarios. Sin especificación, pide los criterios al usuario.
-2. MF afectados (por la especificación o el diff) y su módulo (`programacion`, `planeacion`, `plan-mejoramiento`, …): definen la etiqueta `@<modulo>`.
+2. MF afectados (por la especificación o el diff) y su módulo: la etiqueta `@<modulo>` y la carpeta `e2e/<modulo>/` usan el **nombre de la carpeta** del módulo en `src/app/modules/` (p. ej. `@programacion`), para que el aviso tras un pull pueda sugerir los escenarios correctos.
 3. Herramienta: `playwright-cli --version`. Si no está: `npm install -g @playwright/cli@latest` (con confirmación).
 4. Navegador visible en WSL: el login manual requiere ventana (WSLg). Si `playwright-cli open --headed` no abre ventana, dilo y pide al usuario que lo resuelva; no intentes hacer el login sin ventana.
 
@@ -105,13 +105,28 @@ El login es OIDC implícito contra `autenticacion.portaloas.udistrital.edu.co`; 
 ## Paso 6 — Ejecutar y reparar
 
 ```bash
-PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep @<modulo>        # por issue: los flujos tocados
-PLAYWRIGHT_HTML_OPEN=never npx playwright test                         # completo: antes de un release
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep @<modulo>        # antes del PR: TODOS los escenarios del módulo
+PLAYWRIGHT_HTML_OPEN=never npx playwright test                         # completo: si cambiaste e2e/fixtures.ts y antes de un release
 ```
 
 - Fallos: flujo de reparación de `playwright-cli` (`references/test-generation.md` §3), de a uno.
 - Si el MF no hace lo que dice el criterio: **para y pregunta** si es un bug o si el criterio cambió (no ajustes el test para que pase).
-- Specs e2e de otras personas que rompa tu cambio de interfaz: si el cambio es intencional, actualízalos y dilo; si no, es una regresión tuya (`AGENTS.md` §8). Nunca `test.skip`/`test.fixme` sin decisión del usuario.
+- Nunca `test.skip`/`test.fixme` sin decisión del usuario.
+
+## Trabajo en equipo en el mismo módulo
+
+Varias personas agregan flujos al mismo módulo; los escenarios e2e del módulo son de todos.
+
+| Situación | Qué se hace |
+|---|---|
+| Issue nueva en un módulo | Plan propio `e2e/specs/<funcionalidad>.plan.md` (no se edita el plan de otra funcionalidad) y escenarios en archivos propios con la etiqueta `@<modulo>`. Así dos issues en paralelo no chocan |
+| Lo compartido: login por rol, navegación, creación y limpieza de datos | Vive en `e2e/fixtures.ts`. Quien lo cambia corre **todas** las e2e del MF, no sólo las del módulo |
+| Tu cambio toca la interfaz (texto, botón, etiqueta, paso del flujo) | Busca en `e2e/` los escenarios que lo usan (`grep -rn "<texto o nombre accesible>" e2e/`) y actualízalos en el mismo PR; es parte del cambio. Si el comportamiento cambió a propósito, dilo en el PR |
+| Antes del PR | Corre **todos** los escenarios del módulo (`--grep @<modulo>`), no sólo los tuyos: tu cambio puede romper flujos de otros. Lo que ya fallaba en la base se reporta aparte |
+| Después de traer cambios de otra persona al módulo | El aviso de `contexto-proyecto` sugiere correr `--grep @<modulo>` si tienes el stack y la sesión; es sugerencia, no obligación |
+| Falla un escenario por el cambio de otra persona | No corrijas su interfaz ni su escenario por tu cuenta: pásale el escenario que falla y la traza (`test-results/<…>/trace.zip`, se abre con `npx playwright show-trace`), y decide el autor |
+| Roles | Los nombres de `projects` en `playwright.config.ts` son los mismos para todo el equipo; cada persona guarda en `e2e/.auth/` la sesión de **sus** usuarios de prueba |
+| Datos | Cada escenario crea lo suyo por API con marcador y lo limpia (Paso 5); nunca depende de lo que haya en la base local de alguien |
 
 ## Paso 7 — Evidencias e informe
 

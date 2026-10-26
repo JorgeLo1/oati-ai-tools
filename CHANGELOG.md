@@ -2,6 +2,13 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.5.0 · 2026-10-26
+
+- Pruebas funcionales con varias personas en el mismo módulo (`pruebas-funcionales-oas`, sección "Trabajo en equipo en el mismo módulo"; `AGENTS.md` §8): plan propio por funcionalidad; `e2e/fixtures.ts` compartido (quien lo cambia corre todas las e2e); quien cambia la interfaz actualiza en el mismo PR los escenarios que la usan; antes del PR se corren todos los escenarios del módulo (`--grep @<modulo>`); si falla el escenario de otra persona por su cambio, se le pasa la traza y decide el autor; nombres de rol comunes y sesiones propias. La etiqueta `@<modulo>` es el nombre de la carpeta en `src/app/modules/`.
+- Aviso de `contexto-proyecto`: si llegan cambios de otras personas a módulos de un MF con Playwright, sugiere correr sus escenarios (`--grep "@<modulo>"`), sin ejecutarlos.
+- `code-review-oas`: revisa que los cambios de interfaz actualicen los escenarios e2e afectados y que los flujos nuevos traigan escenario.
+- La evidencia de pruebas en el PR pasa a ser una **recomendación** (`commit-oas` la propone; `code-review-oas` la sugiere sin exigirla). Las pruebas unitarias del `pre-commit` quedan como herramienta de uso local.
+
 ## 1.4.1 · 2026-10-26
 
 - Recordatorio `[reglas-udistrital]`: la suite completa va en `/seguridad-oas` y los tests que rompe un cambio son de quien lo hace; `/release-oas` para releases; en MF, `/pruebas-funcionales-oas` antes de cerrar issues con interfaz.

@@ -141,6 +141,18 @@ def cambios_traidos(root, desde):
     return commits, sorted(archivos)
 
 
+def modulos_e2e(root, archivos):
+    """Módulos del MF (carpeta de src/app/modules o de e2e/) tocados, si el repo tiene Playwright."""
+    if not any(os.path.exists(os.path.join(root, f"playwright.config.{e}")) for e in ("ts", "js", "mjs")):
+        return []
+    mods = set()
+    for a in archivos:
+        m = re.match(r"(?:src/app/modules|e2e)/([a-z0-9][a-z0-9_-]*)/", a)
+        if m and m.group(1) not in ("specs", ".auth"):
+            mods.add(m.group(1))
+    return sorted(mods)
+
+
 def ya_notificado(session_id, clave):
     """Evita repetir el aviso en la misma sesión para el mismo proyecto+HEAD."""
     marca = os.path.join(tempfile.gettempdir(), f"claude-contexto-{session_id or 'sin-sesion'}")
@@ -209,6 +221,15 @@ def revisar(root, sesion):
             f"`python3 {PRUEBAS} --repo {root} --desde {desde_valido}` (salida 0 = pasan, 1 = fallan, 2 = no se pudo evaluar). "
             "Repórtalo en una línea; si fallan, di qué specs y de qué commit/autor vienen. No corrijas código ni tests ajenos "
             "sin preguntar al usuario; si la suite no arranca, es deuda preexistente: dilo y sigue."
+        )
+    modulos = modulos_e2e(root, archivos) if commits is not None else []
+    if modulos:
+        grep = "|".join(f"@{m}" for m in modulos)
+        pruebas += (
+            f"\nLlegaron cambios de otras personas a módulos del MF con pruebas funcionales ({', '.join(modulos)}). "
+            f"Sugiere al usuario, en una línea, correr sus escenarios si tiene el stack y la sesión: "
+            f"`PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep \"{grep}\"` (ver /pruebas-funcionales-oas). "
+            "Es sólo una sugerencia: no los ejecutes sin que lo pida."
         )
     return (
         f"[contexto-proyecto] Se detectaron cambios traídos (pull/merge/checkout) en {root} desde la última sincronización del contexto.\n"

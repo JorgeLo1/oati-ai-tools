@@ -161,7 +161,7 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
    - `git push -u origin <rama>` y un Pull Request: `feature/` hacia `develop`; `hotfix/` hacia `master` y `develop`; `release/` hacia `master` y `develop`.
    - Recordatorio del lineamiento de limpieza: eliminar la rama una vez integrada a la línea base.
 
-6. **Texto del PR** (cuando lo pida el usuario o al cerrar la tarea). Mientras el pipeline no ejecute las pruebas, el PR lleva la evidencia (`AGENTS.md` §8), y sin esa sección el revisor no aprueba:
+6. **Texto del PR** (cuando lo pida el usuario o al cerrar la tarea). Mientras el pipeline no ejecute las pruebas, se recomienda que el PR lleve la evidencia (`AGENTS.md` §8). Inclúyela si se corrieron pruebas en la sesión; si no, deja la sección con lo que falte por correr en vez de inventarlo:
 
    ```markdown
    ## Resumen
@@ -171,7 +171,7 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
    - Suite completa: `<comando>` → <N suites, N tests: N pasan, N fallan> (resultado real de esta rama)
    - Fallos preexistentes (también fallan en la base): <specs o "ninguno"> · Suite que no arranca: <sí/no>
    - Specs agregados/actualizados: <archivos>; tests ajenos ajustados por cambio de contrato: <archivos y motivo, o "ninguno">
-   - Pruebas funcionales: <informe de /pruebas-funcionales-oas o "no aplica">
+   - Pruebas funcionales: `--grep @<modulo>` → <N escenarios: N pasan, N fallan> · informe de /pruebas-funcionales-oas · o "no aplica"
    ```
 
    Usa el resultado que obtuvo `/seguridad-oas` en esta sesión; si no lo hay, corre la suite antes de redactarlo. Nunca escribas "pasan" sin haberlo visto.
