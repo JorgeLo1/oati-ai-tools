@@ -13,6 +13,8 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
 - `modelo_de_datos/lineamientos_mongo.md`
 - Beego/Postgres: `generacion_de_apis/beego_migrations.md`, `control_error_json_crud.md`, `variables_en_api.md`, `modelo_de_datos/lineamientos_modelos_relacionales.md`, `modelo_de_datos/guia_de_comentariado.md`
 
+**Precedencia**: manda el lineamiento OAS. La guía del proyecto `udistrital/sisifo_documentacion` (`docs/backend/backend_guide.md`) sólo complementa lo que el lineamiento no define (aquí: evidencia de índices y consultas). Su aclaración sobre fechas coincide con esta skill: `fecha_creacion`/`fecha_modificacion` como BSON `Date`.
+
 ## Paso 0 — Reconocer el repo
 
 1. Stack: `package.json` con `@nestjs/mongoose` → **Nest + Mongo** (secciones 1–6). `go.mod` con `beego` → **Anexo Beego**.
@@ -33,7 +35,7 @@ Antes de escribir código, presenta al usuario el modelo propuesto y confírmalo
 | Relación 1 a pocos | **embebido** (subdocumento o arreglo) en vez de colección aparte |
 | Campos obligatorios en colecciones no paramétricas | `activo: boolean` (default `true`), `fecha_creacion: Date`, `fecha_modificacion: Date` (= `fecha_creacion` al crear) |
 | Tipos | `string`, `number` (int/double), `boolean`, `Date`, arreglos, objetos embebidos, `ObjectId`. Moneda/porcentaje: `number` y documenta la escala |
-| Índices | según las **consultas más frecuentes** (lo que el MID/MF filtra con `query=`): simples o compuestos, p. ej. `{ plan_mejoramiento_id: 1, activo: 1 }` |
+| Índices | según las **consultas más frecuentes** (lo que el MID/MF filtra con `query=`): simples o compuestos, p. ej. `{ plan_mejoramiento_id: 1, activo: 1 }`. Para un índice nuevo o una agregación costosa deja evidencia (complemento de la guía del proyecto): `explain("executionStats")` de la consulta real en la base local, mostrando que usa el índice (`IXSCAN`, no `COLLSCAN`) |
 | Historial de estados | colección `<recurso>_estado` con `<recurso>_id`, `estado_id`, `usuario_id`, `usuario_rol`, `observacion`, `actual`, `fecha_ejecucion_estado`, `activo` (patrón de SISIFO) |
 
 Diseña pensando en las consultas: si siempre se lee junto, embébelo o denormaliza (documentándolo en un comentario, como el `estado_id` vigente copiado en la acción de mejora).

@@ -51,7 +51,7 @@ def skill(nombre):
 
 
 NOMBRES = ("commit-oas", "planificar-issue", "endpoint-oas", "crud-oas", "mid-oas", "seguridad-oas",
-           "documentar-cambios", "doc-issue-oas", "code-review-oas", "contexto-proyecto")
+           "documentar-cambios", "doc-issue-oas", "code-review-oas", "release-oas", "contexto-proyecto")
 _RE_SLASH = re.compile(r"(^|[\s(])/(" + "|".join(NOMBRES) + r")\b")
 _RE_TICK = re.compile(r"`(" + "|".join(NOMBRES) + r")`")
 _RE_SUB = re.compile(r"subagent_type: (" + "|".join(NOMBRES) + r")\b")

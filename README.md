@@ -26,7 +26,7 @@ Funciona completo en **Claude Code** (como plugin) y se puede portar a **otras I
 | Pieza | Qué hace | Dónde |
 |---|---|---|
 | **Reglas del equipo** | Flujo de trabajo, reglas de git y disciplina para la IA | [AGENTS.md](AGENTS.md) → se instala en la carpeta udistrital |
-| **9 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación, code review de PR | [skills/](skills/) |
+| **10 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación, code review de PR, release y despliegue | [skills/](skills/) |
 | **Agente de contexto** | Genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local) | [agents/](agents/) |
 | **Guardianes (Claude Code)** | Bloquean código sin plan aprobado o sin la skill del dominio, commits sin revisión de seguridad, push/PR, atribución a IA, edición de `.env` | [scripts/](scripts/), [hooks/hooks.json](hooks/hooks.json) |
 | **Hooks de git** | Validan rama GitFlow, etiqueta del commit, atribución a IA y secretos **en cualquier herramienta** | [git-hooks/](git-hooks/) |
@@ -91,6 +91,7 @@ La IA identifica qué soporta tu herramienta y propone un plan, que debes aproba
 git push / PR            → los haces tú
 
 /oas:code-review-oas <PR>  → revisar el PR de un compañero (sin descargar sus cambios; informe local)
+/oas:release-oas          → preparar un release: versión, Swagger OpenAPI 2.0, checklist del ambiente, rollback
 ```
 
 En la práctica basta con decir *"vamos con la issue #905"*: la IA sigue el flujo y los guardianes no la dejan saltarse pasos. Las preguntas de decisión vienen con opciones y una recomendada; siempre puedes responder con texto libre.
@@ -108,6 +109,7 @@ En la práctica basta con decir *"vamos con la issue #905"*: la IA sigue el fluj
 | `documentar-cambios` | Al cerrar la tarea | Resumen compartible en `.claude/docs/cambios/<rama>.md` y documentación de módulos actualizada |
 | `doc-issue-oas` | Documentar la issue | Comentario "Avances issue DD/MM/YYYY" listo para la issue (lo publica sólo si confirmas) |
 | `code-review-oas` | Revisar el PR de otra persona | Lee el PR con `gh` (sin checkout, fetch ni pull en tu repo), entiende la implementación de punta a punta y valida sus contratos contra los repos de los que depende (los clona si no los tienes y genera su contexto si falta). Lo mide contra la issue (y la especificación si la tienes), las reglas de endpoint/CRUD/MID, el checklist de seguridad, ramas y commits OAS y bugs de lógica, con tono de compañeros. Informe en `.claude/docs/revisiones/pr-<n>.md` con comentarios listos para copiar. Nunca publica en GitHub |
+| `release-oas` | Preparar un release o paso a pruebas/producción | Versión SemVer, rama `release/X.Y.Z`, Swagger actualizado y convertido a OpenAPI 2.0 para el registro en WSO2, checklist del lineamiento de despliegues con responsables, plan de rollback (N y N−1), tag en `master` y limpieza. Informe en `.claude/docs/releases/`. No hace push, PR, tags ni despliegues |
 
 ## Bloqueos y cómo resolverlos
 

@@ -169,7 +169,7 @@ fi
 
 # ------------------------------------------------------------------ instalación manual previa
 MANUAL=()
-for s in commit-oas planificar-issue endpoint-oas crud-oas mid-oas seguridad-oas documentar-cambios doc-issue-oas code-review-oas; do
+for s in commit-oas planificar-issue endpoint-oas crud-oas mid-oas seguridad-oas documentar-cambios doc-issue-oas code-review-oas release-oas; do
   [ -d "$HOME/.claude/skills/$s" ] && MANUAL+=("$HOME/.claude/skills/$s")
 done
 [ -f "$HOME/.claude/agents/contexto-proyecto.md" ] && MANUAL+=("$HOME/.claude/agents/contexto-proyecto.md")

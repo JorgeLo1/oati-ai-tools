@@ -11,6 +11,8 @@ Esta skill aplica **de forma estricta** los lineamientos de repositorios institu
 - Ramas (GitFlow): https://github.com/udistrital/lineamientos_oas/blob/master/repositorios_institucionales/nombre_branch.md
 - Limpieza de ramas: https://github.com/udistrital/lineamientos_oas/blob/master/repositorios_institucionales/limpieza_branch.md
 
+Guías del proyecto como `udistrital/sisifo_documentacion/docs/backend/backend_guide.md` no cambian estas reglas: lo que contradiga el lineamiento (rama `fix/`, ramas de corrección desde `release/*`, paso a `master` sin tag, distintivos como `X.Y.Z.prod`) no se aplica. El procedimiento de release y despliegue que esa guía complementa está en `/release-oas`.
+
 La skill tiene dos momentos:
 
 - **Antes de desarrollar**: crear la rama de trabajo (Fase A).

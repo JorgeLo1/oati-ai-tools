@@ -14,6 +14,8 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
 - `generacion_de_apis/control_error_json_mid.md`, `logs_api.md` — errores y logs.
 - `api_nest/manejo_error.md`, `api_nest/refactorizacion.md`, `api_nest/swagger.md`, `api_nest/variables_entorno.md`.
 
+**Precedencia**: manda el lineamiento OAS. La guía del proyecto `udistrital/sisifo_documentacion` (`docs/backend/backend_guide.md`) sólo complementa lo que el lineamiento no define (aquí: timeouts, reintentos, idempotencia y correlación en logs); si choca con el lineamiento o con esta skill, se sigue el lineamiento.
+
 ## Paso 0 — Reconocer el repo
 
 1. Stack (`@nestjs/axios` → Nest; `beego` → anexo) y gestor de paquetes por lockfile.
@@ -97,22 +99,32 @@ Mongo vía CRUD no da transacciones entre llamadas. Cuando una operación del MI
 3. Guarda lo creado y, si un paso posterior falla, **compensa** (borrado lógico o restaurar valor anterior) y luego lanza la excepción con un mensaje que diga qué quedó hecho y qué no.
 4. Cambios de estado: `POST` a la colección de historial (`<recurso>-estado`); el CRUD marca el anterior como `actual: false`.
 5. Escrituras secuenciales (`await` una por una); nunca `Promise.all` de escrituras dependientes.
+6. **Idempotencia** (complemento de la guía del proyecto): si la operación puede repetirse por doble clic o reintento del cliente (generar, aprobar, sellar), verifica antes de escribir si ya se hizo (estado actual, registro existente) y responde sin duplicar, o con `409` si el estado actual ya no permite la operación.
 
-## 6. Logs
+## 6. Llamadas a otras APIs: timeouts y reintentos
+
+Complemento de la guía del proyecto (el lineamiento OAS no lo define):
+
+- Toda llamada a otra API debe tener **timeout**. Revisa cómo lo configura el repo (`HttpModule.register({ timeout })`, opción `timeout` del cliente compartido o interceptor); si no existe, no lo inventes en un módulo suelto: anótalo como observación y propón configurarlo en el cliente compartido de `shared/services/`.
+- **Reintentos** sólo en lecturas (`GET`) u operaciones idempotentes, acotados (p. ej. 2 intentos con espera corta) y sólo ante errores transitorios (timeout, `502/503/504`); nunca ante `4xx`. Las escrituras no se reintentan a ciegas: se compensan (sección 5).
+- Limita la concurrencia hacia una misma API (sección 4) para no saturar el CRUD.
+
+## 7. Logs
 
 - Usa el logger del repo (`PinoLogger`/`Logger` de Nest con contexto del service), no `console.log`. Los errores de Axios ya los registra el interceptor del `LoggerService`: no los dupliques.
 - Registra contexto útil (ids, operación), **nunca** tokens, contraseñas, documentos en base64 ni datos personales completos.
+- En errores de servicios externos registra (complemento de la guía del proyecto) el **identificador de la petición** (el `req.id` de `nestjs-pino` o el que use el repo), el **servicio dependiente** y la **duración**, para poder correlacionar el fallo entre el MID y el CRUD.
 
-## 7. Configuración nueva
+## 8. Configuración nueva
 
 - Variable de entorno nueva: agrégala en `configuration.ts` (`env()`), en el `.env` local (no versionado) y documenta en el README; nombre en MAYÚSCULAS (`<API>_SERVICE`, `<NOMBRE_MID>_PORT`).
 - Dependencia nueva de otra API: crea su cliente en `shared/services/` y expórtalo en `ServicesModule`.
 
-## 8. Pruebas
+## 9. Pruebas
 
 `*.service.spec.ts` con los servicios compartidos mockeados (`{ provide: AuditoriaCrudService, useValue: { traerDataCrud: jest.fn(), post: jest.fn(), … } }`). Cubre: caso feliz, id faltante (`BadRequestException`), recurso inexistente (`NotFoundException`), falla del servicio externo, y para escrituras en varios pasos, que se compense si falla un paso intermedio.
 
-## 9. Verificación
+## 10. Verificación
 
 ```bash
 pnpm build

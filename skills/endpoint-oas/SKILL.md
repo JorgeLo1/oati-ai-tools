@@ -16,6 +16,8 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
 - `generacion_de_apis/versionado-apis-XYZ.md` — SemVer.
 - `api_nest/refactorizacion.md` — estructura de respuesta en Nest.
 
+**Precedencia**: manda el lineamiento OAS. La guía del proyecto `udistrital/sisifo_documentacion` (`docs/backend/backend_guide.md`) sólo complementa lo que el lineamiento no define (aquí: `409`, `202`, `Location`, Swagger en OpenAPI 2.0 para Arquitectura). Donde choca, se sigue el lineamiento y esta skill: coherencia singular/plural con el repo (no plural obligatorio), `DELETE` lógico con `200` y envoltura (no `204` sin cuerpo), paginación con el `FilterDto` del CRUD (`limit`/`offset`, no `pagina`/`limite`).
+
 ## Paso 0 — Conocer el repo antes de opinar
 
 1. Identifica el tipo de API: **CRUD** (persistencia, `MongooseModule`/`schema`) o **MID** (lógica de negocio que llama a otros servicios con `HttpService`), y el framework (NestJS: `@Controller`; Beego: `// @router`).
@@ -55,8 +57,8 @@ Errores típicos a detectar: `GET` con body o que crea/actualiza; `POST` para co
 
 ## Paso 3 — Status codes y respuesta
 
-- **2xx**: `200` consulta/actualización/borrado exitoso, `201` creación. **Una lista vacía es `200` con `Data: []`**, no `404`.
-- **4xx**: `400` parámetros o body inválidos (incluye ObjectId mal formado), `404` el recurso pedido por id no existe, `401/403` auth (si aplica).
+- **2xx**: `200` consulta/actualización/borrado exitoso, `201` creación. **Una lista vacía es `200` con `Data: []`**, no `404`. Complementos de la guía del proyecto, siempre con la envoltura: `202` si el `POST` sólo acepta una tarea asíncrona (y existe un `GET` para consultar su estado); en `201` se puede añadir la cabecera `Location` con la ruta del recurso creado (recomendación, no obligatorio).
+- **4xx**: `400` parámetros o body inválidos (incluye ObjectId mal formado), `404` el recurso pedido por id no existe, `401/403` auth (si aplica: `401` sin credenciales válidas, `403` sin permiso), `409` cuando la petición es válida pero choca con el estado actual (transición de estado no permitida, operación ya ejecutada, duplicado).
 - **5xx**: falla del servidor o de un servicio externo del que depende el MID (`502` si es el externo, `500` si es propio).
 - Mensajes de error **legibles y útiles**, en el idioma que ya use el repo (en SISIFO, español: `"Error en servicio GetAll: la peticion contiene un parametro incorrecto o no existe un registro"`).
 
@@ -85,6 +87,8 @@ Cada endpoint nuevo o modificado lleva:
 ```
 
 En Beego: comentarios `@Title`, `@Description`, `@Param`, `@Success`, `@Failure`, `@router /ruta [verbo]`.
+
+**Registro en WSO2** (complemento de la guía del proyecto): si el endpoint es **nuevo**, para el despliegue hay que pedir su registro a Arquitectura con el enlace del repositorio y el `swagger.json` en **OpenAPI 2.0**. Nest genera OpenAPI 3: la conversión no reemplaza el archivo del framework y se prepara al alistar el release (`/release-oas`). Menciónalo en la salida.
 
 ## Paso 5 — Impacto en consumidores
 

@@ -2,6 +2,16 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.3.0 · 2026-10-26
+
+- Precedencia explícita en las skills: manda `udistrital/lineamientos_oas`; la guía del proyecto `udistrital/sisifo_documentacion` (`docs/backend/backend_guide.md`, `utils/sonar`) sólo tapa huecos. Lo que la contradice no se aplica (rama `fix/`, ramas desde `release/*`, `master` sin tag, `X.Y.Z.prod`, plural obligatorio, `DELETE` `204` sin envoltura, paginación `pagina`/`limite`).
+- Nueva skill `release-oas`: checklist de release según el lineamiento de despliegues (versión SemVer, `release/X.Y.Z`, Swagger y su conversión a OpenAPI 2.0 para el registro en WSO2, pasos y responsables por ambiente, pruebas, BD), plan de rollback con N y N−1, tag en `master` y limpieza. No despliega ni publica.
+- `endpoint-oas`: `409` por conflicto con el estado actual, `202` para tareas asíncronas, `Location` opcional en `201`, aviso de registro en WSO2 con OpenAPI 2.0 para endpoints nuevos.
+- `mid-oas`: timeouts en las llamadas a otras APIs, reintentos acotados sólo en lecturas o en operaciones idempotentes, idempotencia en escrituras repetibles y logs con identificador de petición, servicio dependiente y duración.
+- `crud-oas`: evidencia con `explain("executionStats")` para índices nuevos y agregaciones costosas.
+- `seguridad-oas`: análisis con el SonarQube local de `utils/sonar` (sólo con confirmación y servidor en `127.0.0.1`), exclusiones de `dist`/`coverage`, reporte de cobertura (`lcov.reportPaths`), `.scannerwork/` en `.gitignore` y exportación de issues y hotspots.
+- `commit-oas`: aclara que las guías del proyecto no cambian las reglas de ramas, etiquetas y tags.
+
 ## 1.2.0 · 2026-10-12
 
 - Nueva skill `code-review-oas`: revisa el PR de un compañero sin descargar sus cambios al repo local (todo con `gh`; sin checkout, fetch, pull ni stash).

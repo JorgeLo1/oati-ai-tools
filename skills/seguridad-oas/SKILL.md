@@ -9,6 +9,8 @@ Ejecuta el **Checklist 1 — Validación previa del equipo de desarrollo** del l
 
 Fuente: `qa/validación_seguridad.md` (léela con `gh api "repos/udistrital/lineamientos_oas/contents/qa/validaci%C3%B3n_seguridad.md" -H "Accept: application/vnd.github.raw"` para confirmar que no cambió).
 
+**Precedencia**: manda el lineamiento OAS; los documentos de `udistrital/sisifo_documentacion` (p. ej. `utils/sonar`) sólo complementan lo que el lineamiento no define.
+
 **Esta skill revisa y reporta; no corrige por su cuenta.** Al final ofrece aplicar las correcciones que el usuario elija.
 
 ## Paso 0 — Alcance
@@ -83,12 +85,14 @@ Requiere red: si falla, dilo y deja el comando para que el usuario lo ejecute. R
 
 ## 8. SonarQube y calidad
 
-- Existe `sonar-project.properties` con `sonar.projectKey`, `sonar.sources`, exclusiones (`node_modules`, `dist`, `**/*.spec.ts`) y, si hay cobertura, la ruta del lcov. **No ejecutes `sonar-scanner`** (envía el código al servidor): sólo indica si la configuración está completa.
+- Existe `sonar-project.properties` con `sonar.projectKey`, `sonar.sources`, exclusiones (`node_modules`, `dist`, `coverage`, `**/*.spec.ts`) y, si hay pruebas, la ruta del reporte de cobertura (`sonar.javascript.lcov.reportPaths=coverage/lcov.info` en Nest/Angular; `sonar.go.coverage.reportPaths` en Go). Sin ese reporte, la cobertura que muestra Sonar no es real: anótalo. `sonar.tests`/`sonar.test.inclusions` no sustituyen el reporte.
+- `.scannerwork/` en `.gitignore` si se analiza localmente.
+- **Análisis local** (complemento: `udistrital/sisifo_documentacion/utils/sonar`, guías `GUIA_SONARQUBE_DOCKER*.md`): nunca ejecutes `sonar-scanner` contra un servidor remoto (envía el código fuera). Sólo si el usuario lo pide y confirma, y con el servidor local de esa guía levantado (`compose.sonar.yml`, publicado en `127.0.0.1:9000`), puedes correr el scanner en Docker con `-Dsonar.qualitygate.wait=true`; el `SONAR_TOKEN` lo carga el usuario en su terminal y nunca se escribe en archivos ni en comandos. Verifica que la red Docker del scanner sea la misma del compose (`sisifo-sonar-net` en los archivos de esa carpeta). Reporta el Quality Gate y, para la entrega, los hallazgos por API (`api/issues/search`, `api/hotspots/search`), no sólo `api/measures/component`. Si no hay servidor local, sólo indica si la configuración está completa.
 - `pnpm build` y `pnpm lint` pasan (reporta resultado real; si `lint`/`test` ya estaban rotos antes del cambio, dilo).
 
 ## 9. Documentación para la entrega a Seguridad
 
-Verifica si existen (o qué falta) los insumos que Seguridad pide: nombre de la aplicación, URL de pruebas, repositorio(s) y ramas, **diagrama/documento de arquitectura**, usuarios/roles de prueba, tecnologías, **Swagger/OpenAPI** de las APIs, manuales/instructivos.
+Verifica si existen (o qué falta) los insumos que Seguridad pide: nombre de la aplicación, URL de pruebas, repositorio(s) y ramas, **diagrama/documento de arquitectura**, usuarios/roles de prueba, tecnologías, **Swagger/OpenAPI** de las APIs, manuales/instructivos. Si el paso es hacia un ambiente con registro en WSO2, recuerda que Arquitectura pide el `swagger.json` en OpenAPI 2.0 (ver `/release-oas`).
 
 ## Salida
 

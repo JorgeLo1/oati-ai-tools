@@ -27,6 +27,7 @@ Antes de proponer código, identifica el stack del repo y sigue el patrón de un
 | `documentar-cambios` | Resumen compartible de la tarea + actualización del contexto del proyecto |
 | `doc-issue-oas` | Comentario "Avances issue" para la issue de GitHub |
 | `code-review-oas` | Code review del PR de un compañero sin descargar sus cambios, con los lineamientos de las demás skills; informe local |
+| `release-oas` | Checklist de release y despliegue (versión, Swagger en OpenAPI 2.0 para WSO2, pasos por ambiente, rollback, tag, limpieza); no despliega ni publica |
 | agente `contexto-proyecto` | Genera/actualiza el contexto `.claude/docs/` del repo por módulos |
 
 En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `oas:contexto-proyecto`.
@@ -53,6 +54,7 @@ En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `
 | Tarea terminada | Cerrar la especificación (criterios verificados, `estado: implementada`) y `documentar-cambios` |
 | Documentar la issue (pedido o "Documentación implementación" en el DoD) | `doc-issue-oas` |
 | Revisar el PR de otra persona | `code-review-oas` (sin checkout ni pull; no publica en GitHub) |
+| Preparar un release o un paso a pruebas/producción | `release-oas` (checklist; push, PR, tags y despliegues los hacen los responsables) |
 
 Una tarea que abarca varios repos aplica cada skill en el repo que corresponde.
 
