@@ -2,6 +2,13 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.6.0 · 2026-10-26
+
+- `pruebas-funcionales-oas`: login automático por rol en `e2e/global-setup.ts` con usuarios de prueba dedicados desde variables de entorno (`.env.e2e` local, no versionado, con `.env.e2e.example` versionado; secrets en Drone). Convención común a todos los MF: `E2E_BASE_URL`, `E2E_<ROL>_USER`, `E2E_<ROL>_PASS`. La IA nunca lee ni muestra los valores; el setup no graba traza ni video (grabarían la contraseña) y no reintenta logins fallidos (bloqueo de cuenta en WSO2). El login manual queda como alternativa.
+- Escenarios etiquetados `@lectura` / `@escritura`: en el ambiente de pruebas compartido sólo `@lectura`, salvo aprobación y limpieza.
+- Paso 8: ejecución contra el ambiente de pruebas desplegado para funcionamiento (`e2e:pruebas`), guía `e2e/README.md` para quien no desarrolla, y borrador del paso `e2e_pruebas` para Drone (imagen de Playwright, secrets por rol, sólo con autorización).
+- Casos E07b (escribir `.env.e2e` → bloquear) y E07c (`.env.e2e.example` → permitir).
+
 ## 1.5.0 · 2026-10-26
 
 - Pruebas funcionales con varias personas en el mismo módulo (`pruebas-funcionales-oas`, sección "Trabajo en equipo en el mismo módulo"; `AGENTS.md` §8): plan propio por funcionalidad; `e2e/fixtures.ts` compartido (quien lo cambia corre todas las e2e); quien cambia la interfaz actualiza en el mismo PR los escenarios que la usan; antes del PR se corren todos los escenarios del módulo (`--grep @<modulo>`); si falla el escenario de otra persona por su cambio, se le pasa la traza y decide el autor; nombres de rol comunes y sesiones propias. La etiqueta `@<modulo>` es el nombre de la carpeta en `src/app/modules/`.
