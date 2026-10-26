@@ -2,6 +2,16 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.2.0 · 2026-10-12
+
+- Nueva skill `code-review-oas`: revisa el PR de un compañero sin descargar sus cambios al repo local (todo con `gh`; sin checkout, fetch, pull ni stash).
+  - Entiende la implementación de punta a punta (flujos, contratos con el backend, código eliminado, equivalencia en refactors, variantes paralelas) y la valida contra los repos de los que depende: si un repo involucrado no está local lo clona, y si no tiene contexto lo genera con el agente `contexto-proyecto`. Busca PRs hermanos de la misma issue en otros repos.
+  - Mide el PR contra la issue y sus criterios de aceptación (y la especificación si existe en la carpeta local), las reglas de `endpoint-oas`, `crud-oas` y `mid-oas` en modo revisar, el checklist de `seguridad-oas` sobre el diff del PR, las reglas de ramas y commits de `commit-oas`, la disciplina de `AGENTS.md` y las reglas clave del repo.
+  - Tono de compañeros: reconoce lo bueno, sólo los bugs con escenario concreto piden ajustes, los detalles de forma se agrupan y son opcionales. Verifica cada hallazgo antes de reportarlo y soporta re-revisión.
+  - Nada llega al comentario sin comprobar: filtro de precedentes (diseño ya aprobado en variantes o PRs anteriores), explicaciones del autor y alcance real del escenario; verificación independiente con un subagente que intenta refutar cada observación; repaso frase por frase con evidencia `archivo:línea`. Lo descartado queda en el informe con su motivo.
+  - Los comentarios se redactan con el estilo de `doc-issue-oas` calibrado con los comentarios previos del usuario, sin tono de IA.
+  - El informe es local (`.claude/docs/revisiones/pr-<n>.md`) con comentarios listos para copiar; nunca publica en GitHub.
+
 ## 1.1.0 · 2026-10-09
 
 - Agente `contexto-proyecto`: el contexto se organiza por **dominios funcionales comunes entre repos** (MF, MID y CRUD con los mismos nombres y números; adopta la numeración de un repo hermano que ya tenga contexto), con documentos transversales según el tipo de repo, plantilla fija por dominio con "En otros repos" (enlaces reales MF → MID → CRUD) y "Trampas", tablas generadas por script entre marcadores, índice orientado a tareas y límites de tamaño.

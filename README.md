@@ -26,7 +26,7 @@ Funciona completo en **Claude Code** (como plugin) y se puede portar a **otras I
 | Pieza | Qué hace | Dónde |
 |---|---|---|
 | **Reglas del equipo** | Flujo de trabajo, reglas de git y disciplina para la IA | [AGENTS.md](AGENTS.md) → se instala en la carpeta udistrital |
-| **8 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación | [skills/](skills/) |
+| **9 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación, code review de PR | [skills/](skills/) |
 | **Agente de contexto** | Genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local) | [agents/](agents/) |
 | **Guardianes (Claude Code)** | Bloquean código sin plan aprobado o sin la skill del dominio, commits sin revisión de seguridad, push/PR, atribución a IA, edición de `.env` | [scripts/](scripts/), [hooks/hooks.json](hooks/hooks.json) |
 | **Hooks de git** | Validan rama GitFlow, etiqueta del commit, atribución a IA y secretos **en cualquier herramienta** | [git-hooks/](git-hooks/) |
@@ -89,6 +89,8 @@ La IA identifica qué soporta tu herramienta y propone un plan, que debes aproba
    ├─ antes de commitear:  /oas:seguridad-oas → /oas:commit-oas (te pide confirmar)
    └─ al cerrar:           criterios verificados → /oas:documentar-cambios → /oas:doc-issue-oas
 git push / PR            → los haces tú
+
+/oas:code-review-oas <PR>  → revisar el PR de un compañero (sin descargar sus cambios; informe local)
 ```
 
 En la práctica basta con decir *"vamos con la issue #905"*: la IA sigue el flujo y los guardianes no la dejan saltarse pasos. Las preguntas de decisión vienen con opciones y una recomendada; siempre puedes responder con texto libre.
@@ -105,6 +107,7 @@ En la práctica basta con decir *"vamos con la issue #905"*: la IA sigue el fluj
 | `seguridad-oas` | Antes del commit/PR | Checklist institucional de seguridad sobre el diff, hallazgos por severidad; informe en `.claude/docs/seguridad/` |
 | `documentar-cambios` | Al cerrar la tarea | Resumen compartible en `.claude/docs/cambios/<rama>.md` y documentación de módulos actualizada |
 | `doc-issue-oas` | Documentar la issue | Comentario "Avances issue DD/MM/YYYY" listo para la issue (lo publica sólo si confirmas) |
+| `code-review-oas` | Revisar el PR de otra persona | Lee el PR con `gh` (sin checkout, fetch ni pull en tu repo), entiende la implementación de punta a punta y valida sus contratos contra los repos de los que depende (los clona si no los tienes y genera su contexto si falta). Lo mide contra la issue (y la especificación si la tienes), las reglas de endpoint/CRUD/MID, el checklist de seguridad, ramas y commits OAS y bugs de lógica, con tono de compañeros. Informe en `.claude/docs/revisiones/pr-<n>.md` con comentarios listos para copiar. Nunca publica en GitHub |
 
 ## Bloqueos y cómo resolverlos
 

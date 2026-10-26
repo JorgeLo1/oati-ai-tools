@@ -26,6 +26,7 @@ Antes de proponer código, identifica el stack del repo y sigue el patrón de un
 | `seguridad-oas` | Checklist de seguridad OAS sobre el diff antes del commit/PR |
 | `documentar-cambios` | Resumen compartible de la tarea + actualización del contexto del proyecto |
 | `doc-issue-oas` | Comentario "Avances issue" para la issue de GitHub |
+| `code-review-oas` | Code review del PR de un compañero sin descargar sus cambios, con los lineamientos de las demás skills; informe local |
 | agente `contexto-proyecto` | Genera/actualiza el contexto `.claude/docs/` del repo por módulos |
 
 En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `oas:contexto-proyecto`.
@@ -51,6 +52,7 @@ En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `
 | Commit | `commit-oas` (siempre con confirmación explícita del usuario) |
 | Tarea terminada | Cerrar la especificación (criterios verificados, `estado: implementada`) y `documentar-cambios` |
 | Documentar la issue (pedido o "Documentación implementación" en el DoD) | `doc-issue-oas` |
+| Revisar el PR de otra persona | `code-review-oas` (sin checkout ni pull; no publica en GitHub) |
 
 Una tarea que abarca varios repos aplica cada skill en el repo que corresponde.
 

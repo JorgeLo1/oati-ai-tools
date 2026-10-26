@@ -25,7 +25,7 @@ Lee completos, en este orden:
 1. [AGENTS.md](AGENTS.md) — reglas del equipo (lo que la IA debe hacer siempre).
 2. [spec/contratos.md](spec/contratos.md) — contrato de cada control (R0–R13), avisos (A1–A3) y hooks de git (H1–H2).
 3. [spec/casos.json](spec/casos.json) — casos de aceptación con la decisión esperada.
-4. `skills/*/SKILL.md` — las 8 skills (formato abierto de Agent Skills: carpeta con `SKILL.md`, cabecera YAML `name` + `description`).
+4. `skills/*/SKILL.md` — las 9 skills (formato abierto de Agent Skills: carpeta con `SKILL.md`, cabecera YAML `name` + `description`).
 5. `agents/contexto-proyecto.md` — el agente de contexto.
 6. `scripts/` — implementación de referencia (Python 3, sin dependencias externas): `skill-guard.py`, `git-guard.py`, `shell_cmd.py`, `contexto-proyecto.py`, `reglas-udistrital.py`, `oas_config.py`. Su protocolo de entrada/salida es el de hooks de Claude Code (JSON por stdin; salida `hookSpecificOutput.permissionDecision` = `allow|ask|deny`, o `decision: block` en `Stop`).
 
@@ -53,7 +53,7 @@ Completa esta tabla para tu herramienta (es el núcleo del plan):
 | # | Componente | Contrato | Destino preferido | Si no existe el mecanismo |
 |---|---|---|---|---|
 | 1 | Reglas del equipo | `AGENTS.md` | Tu archivo de instrucciones **global**, con una sección que diga: "Cuando el directorio de trabajo esté dentro de `<UDISTRITAL>`, aplica las reglas de `<UDISTRITAL>/AGENTS.md`" y su contenido (o una referencia si tu herramienta importa archivos). No modifiques los repos para esto | — (siempre existe algún archivo de instrucciones) |
-| 2 | 8 skills | `skills/*/SKILL.md` | Formato nativo de skills, conservando nombre, descripción (es lo que dispara su uso automático) y cuerpo | Comandos/prompt files con el mismo nombre + una regla que liste cuándo usar cada uno (copia la columna "Para qué" de AGENTS.md §2) |
+| 2 | 9 skills | `skills/*/SKILL.md` | Formato nativo de skills, conservando nombre, descripción (es lo que dispara su uso automático) y cuerpo | Comandos/prompt files con el mismo nombre + una regla que liste cuándo usar cada uno (copia la columna "Para qué" de AGENTS.md §2) |
 | 3 | Agente `contexto-proyecto` | `agents/contexto-proyecto.md`, A3 | Subagente/modo con el mismo prompt (incluye la estructura por dominios y la verificación con `scripts/verificar_contexto.py`, que es Python independiente de la herramienta) | Skill/comando `contexto-proyecto` que el usuario o la IA ejecuta en el mismo hilo |
 | 4 | Guardián de acciones | R0–R13 | Hooks nativos que llamen a los scripts de referencia mediante un **adaptador** (ver Paso 4.3) | Instrucción explícita en las reglas + informe "no controlado" por cada regla |
 | 5 | Guardián de git en la IA | R9–R12 | Hook antes de ejecutar comandos de terminal → `git-guard.py` vía adaptador | Hooks de git (H1–H2, ya instalados) cubren ramas, etiquetas, atribución y secretos; push/PR quedan como instrucción |
