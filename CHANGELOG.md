@@ -2,6 +2,11 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.6.1 · 2026-10-26
+
+- `instalar.sh`: avisa si el plugin instalado en Claude Code está atrás de la versión del repo y recuerda activar la actualización automática del marketplace `oas-udistrital` (Claude Code la trae apagada para marketplaces de terceros).
+- README: cómo activar la actualización automática, y que las reglas (`AGENTS.md`) y los hooks de git son copias que sólo se actualizan volviendo a correr `instalar.sh`.
+
 ## 1.6.0 · 2026-10-26
 
 - `pruebas-funcionales-oas`: login automático por rol en `e2e/global-setup.ts` con usuarios de prueba dedicados desde variables de entorno (`.env.e2e` local, no versionado, con `.env.e2e.example` versionado; secrets en Drone). Convención común a todos los MF: `E2E_BASE_URL`, `E2E_<ROL>_USER`, `E2E_<ROL>_PASS`. La IA nunca lee ni muestra los valores; el setup no graba traza ni video (grabarían la contraseña) y no reintenta logins fallidos (bloqueo de cuenta en WSO2). El login manual queda como alternativa.

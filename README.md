@@ -69,6 +69,8 @@ claude plugin install oas@oas-udistrital
 
 (Dentro de Claude Code también: `/plugin marketplace add …` y `/plugin install oas@oas-udistrital`.) Abre una sesión nueva. Las skills quedan como `/oas:planificar-issue`, `/oas:commit-oas`, etc.
 
+**Activa la actualización automática.** Claude Code sólo la trae activada para los marketplaces oficiales de Anthropic; para este (de terceros) viene apagada y el plugin se queda en la versión que instalaste. En Claude Code: `/plugin` → *Marketplaces* → `oas-udistrital` → activar la actualización automática. Con eso, cada vez que abras Claude Code trae la última versión publicada (la sesión ya abierta sigue con la que cargó: reinicia para verla).
+
 Si antes tenías estas herramientas copiadas a mano en `~/.claude`, retíralas para no duplicar hooks: `bash instalar.sh --migrar-desde-manual` (las mueve a un respaldo).
 
 ### Otras IAs
@@ -170,9 +172,13 @@ Para desactivar los guardianes en un repo puntual, crea el archivo vacío `<repo
 ## Actualizar y desinstalar
 
 ```bash
-cd ~/oati-ai-tools && git pull && bash instalar.sh -y     # reglas, hooks de git y pruebas
+cd ~/oati-ai-tools && git pull && bash instalar.sh -y     # reglas (AGENTS.md), hooks de git y pruebas
 claude plugin marketplace update oas-udistrital           # Claude Code: trae la nueva versión del plugin
 ```
+
+Son dos actualizaciones distintas:
+- **Plugin de Claude Code** (skills, guardianes, agente): con la actualización automática activada llega solo al abrir Claude Code; si no, `/plugin` → *Marketplaces* → `oas-udistrital` → actualizar, y reinicia la sesión. `instalar.sh` avisa si el plugin instalado está atrás de la versión del repo.
+- **Reglas y hooks de git** (`<udistrital>/AGENTS.md`, `~/.config/oas-ai-tools/git-hooks`): son copias, **no se actualizan con el plugin**. Cada vez que cambien hay que hacer `git pull` en el clon y volver a correr `bash instalar.sh`.
 
 Otras IAs: después de `git pull`, pide de nuevo *"sigue PORTAR.md"*; la IA compara contra su informe anterior y aplica solo lo que cambió.
 
@@ -204,5 +210,5 @@ claude plugin validate --strict .claude-plugin/plugin.json skills agents
 ```
 
 - Un cambio de comportamiento de un control se documenta primero en `spec/contratos.md` y se cubre con casos nuevos en `spec/casos.json`.
-- Sube `version` en `.claude-plugin/plugin.json` (SemVer) y registra el cambio en [CHANGELOG.md](CHANGELOG.md): los usuarios de Claude Code reciben la actualización cuando cambia la versión.
+- Sube `version` en `.claude-plugin/plugin.json` (SemVer) y registra el cambio en [CHANGELOG.md](CHANGELOG.md): los usuarios de Claude Code reciben la actualización cuando cambia la versión, **si tienen activada la actualización automática** del marketplace (o la actualizan a mano). Si el cambio toca `AGENTS.md` o `git-hooks/`, avisa al equipo que vuelva a correr `instalar.sh`.
 - Commits con las mismas reglas del equipo (los hooks de git aplican si el repo vive en la organización udistrital).

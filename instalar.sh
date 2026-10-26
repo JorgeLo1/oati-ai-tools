@@ -149,12 +149,22 @@ CLAUDE_BIN="$(command -v claude || ls -d "$HOME"/.vscode-server/extensions/anthr
 HAY_OTRA=0
 if [ -n "$CLAUDE_BIN" ]; then
   c_ok "Claude Code ($("$CLAUDE_BIN" --version 2>/dev/null | head -1))"
-  if "$CLAUDE_BIN" plugin list 2>/dev/null | grep -q "oas@oas-udistrital"; then c_ok "Plugin oas instalado"
+  if "$CLAUDE_BIN" plugin list 2>/dev/null | grep -q "oas@oas-udistrital"; then
+    V_REPO="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$RAIZ_REPO/.claude-plugin/plugin.json" 2>/dev/null)"
+    V_INST="$(python3 -c 'import json,os;d=json.load(open(os.path.expanduser("~/.claude/plugins/installed_plugins.json")));print(d["plugins"]["oas@oas-udistrital"][0]["version"])' 2>/dev/null)"
+    if [ -n "$V_REPO" ] && [ -n "$V_INST" ] && [ "$V_REPO" != "$V_INST" ]; then
+      c_av "Plugin oas instalado en $V_INST, pero este repo está en $V_REPO. Claude Code no actualiza solo los marketplaces de terceros: en Claude Code, /plugin → Marketplaces → oas-udistrital → actualizar (y activa la actualización automática para que lo haga al abrir); luego reinicia la sesión."
+    else
+      c_ok "Plugin oas instalado (${V_INST:-?})"
+    fi
+    echo "     Para recibir las versiones nuevas al abrir Claude Code: /plugin → Marketplaces → oas-udistrital → activar la actualización automática."
   else
     REMOTO="$(git -C "$RAIZ_REPO" remote get-url origin 2>/dev/null | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')"
     echo "     Instálalo (en la terminal o dentro de Claude Code con /plugin):"
     echo "       claude plugin marketplace add ${REMOTO:-$RAIZ_REPO}"
     echo "       claude plugin install oas@oas-udistrital"
+    echo "     Y activa la actualización automática (Claude Code no la activa para marketplaces de terceros):"
+    echo "       /plugin → Marketplaces → oas-udistrital → activar la actualización automática"
   fi
 fi
 for herramienta in cursor codex gemini windsurf; do
