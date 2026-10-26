@@ -108,8 +108,9 @@ def main() -> None:
     cwd = datos.get("cwd") or os.getcwd()
 
     peor = None
-    if re.search(r"(^|[\s;&|(])OAS_HOOKS_OMITIR=", comando):
-        responder("deny", "OAS_HOOKS_OMITIR es un escape sólo para personas: la IA no puede saltarse los hooks de git del equipo.")
+    if re.search(r"(^|[\s;&|(])OAS_(HOOKS|PRUEBAS)_OMITIR=", comando):
+        responder("deny", "OAS_HOOKS_OMITIR y OAS_PRUEBAS_OMITIR son escapes sólo para personas: la IA no puede saltarse "
+                          "los hooks de git del equipo ni sus pruebas.")
     for sub, args, mensaje in acciones(comando, cwd):
         res = None
         if sub == "push":

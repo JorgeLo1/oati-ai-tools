@@ -157,6 +157,11 @@ Nombres en MAYÚSCULAS con prefijo del API (`<NOMBRE_API>_USER`, `_PASS`, `_HOST
 
 Crea/actualiza `*.service.spec.ts` y `*.controller.spec.ts` siguiendo los spec existentes (mock del modelo con `getModelToken(<Recurso>.name)`, mocks de DTO con `Types.ObjectId`). Cubre: `post` exitoso y con referencia inexistente, `getAll` con filtros, `getById` inexistente, `put`, `delete` lógico.
 
+Reglas de equipo (`AGENTS.md` §8):
+- Los documentos de prueba del recurso salen de funciones en `test/fixtures/<recurso>.ts` (`crearPlan({...})`), no copiados en cada spec; si el repo ya tiene otro lugar para eso, úsalo.
+- Si cambias el schema o la respuesta (campo renombrado, tipo, forma de `Data`), busca los specs que lo usan (`grep -rln "<campo>" src --include=*.spec.ts`) y arréglalos todos, también los de otras personas; en el MID, avisa qué specs de consumidores se verán afectados.
+- Nunca borres, saltes ni debilites un test ajeno para que pase.
+
 ## 6. Verificación
 
 Ejecuta (con el gestor del repo) y reporta resultados reales:

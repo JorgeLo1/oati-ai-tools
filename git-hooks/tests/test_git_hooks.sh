@@ -60,6 +60,34 @@ echo f > f.ts; git add f.ts
 t "encadena el hook propio del repo" bloquea commit -m "fix: x"
 grep -q HOOK-PROPIO "$SALIDA" || { FALLOS=$((FALLOS+1)); echo "❌ el hook propio no se ejecutó"; }
 rm .git/hooks/pre-commit; git rm -q --cached f.ts; rm f.ts
+
+# pruebas relacionadas (oas_pruebas.py) con un jest falso cuyo resultado lo decide el archivo "modo"
+J="$UDISTRITAL_DIR/repo_jest"; mkdir -p "$J/node_modules/.bin" "$J/src"
+git -C "$J" init -q -b develop; git -C "$J" config core.hooksPath "$H"; git -C "$J" config user.email t@t; git -C "$J" config user.name t
+cd "$J"
+printf '{"scripts":{"test":"jest"}}\n' > package.json; printf 'node_modules/\nmodo\n' > .gitignore
+cat > node_modules/.bin/jest <<'EOF'
+#!/bin/sh
+case "$(cat modo 2>/dev/null)" in
+  falla) echo "FAIL src/a.spec.ts"; echo "Tests:       1 failed, 1 total"; exit 1 ;;
+  roto)  echo "FAIL src/a.spec.ts"; echo "  ● Test suite failed to run"; echo "Tests:       0 total"; exit 1 ;;
+  *)     echo "Tests:       1 passed, 1 total"; exit 0 ;;
+esac
+EOF
+chmod +x node_modules/.bin/jest
+git add package.json .gitignore; OAS_HOOKS_OMITIR=1 git commit -q -m "base"; git checkout -qb feature/pruebas
+echo 1 > src/a.ts; git add src/a.ts; echo pasa > modo
+t "pruebas relacionadas pasan" pasa commit -m "feat: a"
+echo 2 >> src/a.ts; git add src/a.ts; echo falla > modo
+t "pruebas relacionadas fallan" bloquea commit -m "fix: a"
+grep -q "src/a.spec.ts" "$SALIDA" || { FALLOS=$((FALLOS+1)); echo "❌ no lista el spec que falla"; }
+t "escape humano OAS_PRUEBAS_OMITIR" pasa env OAS_PRUEBAS_OMITIR=1 git commit -q -m "fix: a"
+echo 3 >> src/a.ts; git add src/a.ts; echo roto > modo
+t "suite que no arranca: avisa y deja pasar" pasa commit -m "fix: a"
+grep -q "no arranca" "$SALIDA" || { FALLOS=$((FALLOS+1)); echo "❌ no avisa de la suite rota"; }
+echo falla > modo; echo doc > LEEME.md; git add LEEME.md
+t "sin código en stage: no corre pruebas" pasa commit -m "docs: leeme"
+cd "$R"
 git checkout -q develop; git merge -q --no-ff feature/firma-electronica -m "Merge branch 'feature/firma-electronica' into develop" >"$SALIDA" 2>&1
 [ $? -eq 0 ] && { OK=$((OK+1)); echo "✅ merge en develop (permitido)"; } || { FALLOS=$((FALLOS+1)); echo "❌ merge en develop bloqueado"; cat "$SALIDA"; }
 

@@ -100,6 +100,8 @@ Después:
 
 ## Pruebas realizadas
 
+<!-- Si se corrió /pruebas-funcionales-oas, usa su informe (.claude/docs/pruebas/<rama>.md): una prueba por criterio, con la ruta de su captura en lugar del marcador. -->
+
 ### Prueba 1 — <qué se valida>
 
 <!-- Insertar captura: <qué debe verse> -->

@@ -28,6 +28,7 @@ Antes de proponer código, identifica el stack del repo y sigue el patrón de un
 | `doc-issue-oas` | Comentario "Avances issue" para la issue de GitHub |
 | `code-review-oas` | Code review del PR de un compañero sin descargar sus cambios, con los lineamientos de las demás skills; informe local |
 | `release-oas` | Checklist de release y despliegue (versión, Swagger en OpenAPI 2.0 para WSO2, pasos por ambiente, rollback, tag, limpieza); no despliega ni publica |
+| `pruebas-funcionales-oas` | Pruebas funcionales y specs e2e de los MF con Playwright (sobre `playwright-cli`): stack local, sesión por rol, datos, evidencias |
 | agente `contexto-proyecto` | Genera/actualiza el contexto `.claude/docs/` del repo por módulos |
 
 En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `oas:contexto-proyecto`.
@@ -55,6 +56,8 @@ En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `
 | Documentar la issue (pedido o "Documentación implementación" en el DoD) | `doc-issue-oas` |
 | Revisar el PR de otra persona | `code-review-oas` (sin checkout ni pull; no publica en GitHub) |
 | Preparar un release o un paso a pruebas/producción | `release-oas` (checklist; push, PR, tags y despliegues los hacen los responsables) |
+| Validar en el navegador los flujos de una issue con interfaz, o crear/actualizar specs e2e | `pruebas-funcionales-oas` (sobre `playwright-cli`) |
+| Se trajeron commits de otras personas con código | Correr las pruebas relacionadas con lo que llegó (lo indica el aviso de `contexto-proyecto`) y reportar |
 
 Una tarea que abarca varios repos aplica cada skill en el repo que corresponde.
 
@@ -86,3 +89,15 @@ Una tarea que abarca varios repos aplica cada skill en el repo que corresponde.
 - **Nada de secretos** en el código ni en `environment.ts` de los MF; no leer ni editar `.env` sin permiso del usuario.
 - **Respuestas**: en español, concisas, sin repetir lo ya dicho; referencias `archivo:línea` a lo tocado.
 - **Bloqueos de los guardianes** (`[skill-guard]`, hooks de git): no son errores a esquivar. Haz lo que indican (invocar la skill, pedir la aprobación, corregir el mensaje) y reintenta. No intentes rodearlos.
+
+## 8. Pruebas en módulos compartidos
+
+Varias personas agregan cosas al mismo módulo; las pruebas son de todos.
+
+- **Quien cambia un contrato** (respuesta del CRUD, forma de `Data`, firma de un servicio compartido, estado o ID de config) **arregla todos los tests que rompe**, también los de otras personas, y lo explica en el PR.
+- **Suite verde**: antes del PR se corre la suite completa del repo, no sólo los tests propios. Lo que ya fallaba antes del cambio se reporta aparte como preexistente; lo que rompe el cambio se corrige.
+- **Nunca** se borra, se salta (`skip`, `xit`, `test.fixme`) ni se debilita un test ajeno para que pase. Si falla porque el comportamiento cambió a propósito, se actualiza y se explica; si no está claro, se pregunta al autor.
+- **Comportamiento nuevo o cambiado lleva su test**: cada tarea de código del plan dice qué spec agrega o actualiza.
+- **Organización para no chocar** (specs nuevos): un spec por caso de uso del módulo (`<modulo>.<caso>.spec.ts`), no un spec gigante por service; datos de prueba del módulo en `test/fixtures/<modulo>.ts` (funciones que arman objetos y respuestas del CRUD), para que un cambio de contrato se arregle en un solo lugar. Los specs existentes se migran sólo cuando se tocan.
+- **e2e**: un escenario por archivo, etiquetado por módulo (`@plan-mejoramiento`); no van en CI (dependen del login institucional); se corren por issue (los flujos tocados) y completos antes de un release.
+- El `pre-commit` del equipo corre las pruebas relacionadas con lo que está en stage y bloquea si fallan.

@@ -134,6 +134,15 @@ Es la capa más importante; las otras la complementan. En las líneas del diff, 
 - Escrituras en varios pasos desde el MF (firmar → cambiar estado → notificar): qué pasa si falla el paso 2 después de completar el 1.
 - IDs de negocio fuera de `environment`/`config`, o agregados en un solo ambiente cuando el repo exige todos.
 
+### 4.6 Pruebas (`AGENTS.md` §8)
+
+Sin descargar el PR, con lo que muestra el diff:
+- Comportamiento nuevo o cambiado sin spec que lo cubra (`*.spec.ts`, `_test.go`, e2e): pide el caso concreto que falta, no "agrega tests".
+- Contrato cambiado (respuesta del CRUD, forma de `Data`, firma de un servicio compartido): busca en el repo local (`grep` en `src/**/*.spec.ts` y `test/fixtures/`) los specs que usan ese contrato y no aparecen en el diff; probablemente quedan rotos.
+- Tests ajenos borrados, saltados (`skip`, `xit`, `xdescribe`, `test.fixme`) o debilitados (aserciones quitadas, `toBeDefined()` en lugar del valor) sin explicación en el PR: vale un comentario propio.
+- Specs nuevos que no siguen la convención (un spec por caso de uso, datos en `test/fixtures/<modulo>.ts`): nota opcional, junto con los detalles de forma.
+- No ejecutes la suite (no hay checkout). Si el PR dice que las pruebas pasan sin evidencia, pídela en una línea.
+
 ## Fase 5 — Verificar antes de reportar
 
 El comentario sale con el nombre del usuario: **cada frase debe estar comprobada**. Una observación equivocada deja mal al usuario frente a su compañero, y le cuesta más que no haber comentado. Ante la duda, no se comenta: es preferible un `Revisado.` corto a una observación dudosa.

@@ -68,7 +68,7 @@ Marca cada ítem con su responsable. **APIs o clientes nuevos** llevan todos los
 | 7 | Pruebas: unitarias (líder de desarrollo), carga (líder de seguridad), funcionales (grupo de soporte), de usuario (centro de servicios) | Según cada tipo |
 | 8 | Producción: creación o actualización de BD solicitada a Arquitectura y ejecutada por DBA | Arquitectura / DBA |
 
-Prerrequisitos de producción (lineamiento): Swagger actualizado, refactor de APIs, `.drone.yml` actualizado y **resultado correcto** de las cuatro pruebas. Antes de pedir revisión a Seguridad, corre `/seguridad-oas` sobre el alcance del release.
+Prerrequisitos de producción (lineamiento): Swagger actualizado, refactor de APIs, `.drone.yml` actualizado y **resultado correcto** de las cuatro pruebas. Antes de pedir revisión a Seguridad, corre `/seguridad-oas` sobre el alcance del release. Evidencia de pruebas unitarias: suite completa en verde en la rama release. Si el MF tiene specs e2e, córrelos completos con `/pruebas-funcionales-oas` contra el candidato y adjunta el reporte.
 
 ## Paso 5 — Rollback (complemento de la guía)
 

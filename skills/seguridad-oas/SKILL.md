@@ -89,6 +89,10 @@ Requiere red: si falla, dilo y deja el comando para que el usuario lo ejecute. R
 - `.scannerwork/` en `.gitignore` si se analiza localmente.
 - **Análisis local** (complemento: `udistrital/sisifo_documentacion/utils/sonar`, guías `GUIA_SONARQUBE_DOCKER*.md`): nunca ejecutes `sonar-scanner` contra un servidor remoto (envía el código fuera). Sólo si el usuario lo pide y confirma, y con el servidor local de esa guía levantado (`compose.sonar.yml`, publicado en `127.0.0.1:9000`), puedes correr el scanner en Docker con `-Dsonar.qualitygate.wait=true`; el `SONAR_TOKEN` lo carga el usuario en su terminal y nunca se escribe en archivos ni en comandos. Verifica que la red Docker del scanner sea la misma del compose (`sisifo-sonar-net` en los archivos de esa carpeta). Reporta el Quality Gate y, para la entrega, los hallazgos por API (`api/issues/search`, `api/hotspots/search`), no sólo `api/measures/component`. Si no hay servidor local, sólo indica si la configuración está completa.
 - `pnpm build` y `pnpm lint` pasan (reporta resultado real; si `lint`/`test` ya estaban rotos antes del cambio, dilo).
+- **Suite completa de pruebas** (`AGENTS.md` §8), no sólo las del módulo: `pnpm test` (o el script del repo; `go test ./...` en Go). Separa:
+  - **Introducido por el cambio**: specs que fallan en la rama y pasan en la base. Compáralo corriendo sólo los specs fallidos sobre la base sin cambiar de rama (`git stash` no: usa `git worktree add <scratchpad>/base <base>` con confirmación del usuario, o pregunta). Bloquea el PR.
+  - **Preexistente**: fallaba igual en la base, o la suite no arranca (configuración rota). Se reporta aparte, no bloquea la tarea.
+  - Tests ajenos borrados, saltados (`skip`, `xit`, `test.fixme`) o debilitados en el diff: hallazgo **Media**.
 
 ## 9. Documentación para la entrega a Seguridad
 

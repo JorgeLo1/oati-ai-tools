@@ -7,12 +7,15 @@ Sólo actúan en repos udistrital (dentro de <UDISTRITAL> o con remoto github.co
 de repos sólo encadenan el hook local del repo, si existe.
 
   pre-commit   rama GitFlow válida (feature/<nombre>, hotfix/<nombre>, release/X.Y.Z), sin commits directos en
-               develop/master/main (salvo resolución de merge), sin archivos de secretos ni secretos en las líneas agregadas
+               develop/master/main (salvo resolución de merge), sin archivos de secretos ni secretos en las líneas agregadas,
+               y pruebas unitarias relacionadas con lo que está en stage (oas_pruebas.py): bloquea si fallan; si la suite
+               no arranca, falta node_modules o se agota el tiempo, sólo avisa
   commit-msg   primera línea `<etiqueta>: <descripción>` con etiqueta OAS (feat, fix, docs, test, refactor, devops,
                management) y sin atribución a IA (Co-Authored-By, Claude, Anthropic, "Generated with", 🤖, IA, AI, LLM)
 
 Al terminar, ejecuta el hook propio del repo (.git/hooks/<hook>) si existe, para no romper flujos existentes.
 Escape para personas (no para IA, git-guard lo bloquea): OAS_HOOKS_OMITIR=1 git commit ...
+(sólo las pruebas: OAS_PRUEBAS_OMITIR=1 git commit ...)
 """
 import os
 import re
@@ -105,6 +108,26 @@ def pre_commit():
                 break
     if errores:
         fallar("Commit bloqueado por los lineamientos del equipo:", errores)
+    if not en_merge and os.environ.get("OAS_PRUEBAS_OMITIR") != "1":
+        pruebas_relacionadas()
+
+
+def pruebas_relacionadas():
+    try:
+        import oas_pruebas
+    except Exception:  # instalado sin oas_pruebas.py
+        return
+    repo = git("rev-parse", "--show-toplevel") or os.getcwd()
+    codigo, mensaje, detalle = oas_pruebas.evaluar(repo, staged=True)
+    if codigo == 1:
+        fallar(f"Commit bloqueado: {mensaje}.",
+               [f"`{d}`" for d in detalle] + ["Corrige el código o actualiza el test si el cambio de comportamiento es "
+                                              "intencional (y explícalo en el PR); no lo borres ni lo saltes."])
+    if codigo == 2:
+        print(f"\n⚠ [oas-git-hooks] Pruebas relacionadas: {mensaje}.", file=sys.stderr)
+        for d in filter(None, detalle):
+            print(f"   - {d}", file=sys.stderr)
+        print("   El commit continúa; repórtalo si la suite está rota.\n", file=sys.stderr)
 
 
 def commit_msg(ruta):

@@ -2,6 +2,15 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.4.0 · 2026-10-26
+
+- Pruebas compartidas (`AGENTS.md` §8): quien cambia un contrato arregla los tests que rompe; suite completa antes del PR; nunca borrar, saltar ni debilitar un test ajeno; comportamiento nuevo con su test; specs nuevos por caso de uso con datos en `test/fixtures/<modulo>.ts`.
+- `git-hooks/oas_pruebas.py`: corre las pruebas relacionadas con los archivos cambiados (Jest con `--findRelatedTests` desde `scripts.test`; `go test` de los paquetes tocados; `ng test` se omite con aviso). Salida 0 pasan, 1 fallan, 2 no se pudo evaluar.
+  - `pre-commit`: bloquea si fallan las relacionadas con lo que está en stage; si la suite no arranca, falta `node_modules` o se agota el tiempo, sólo avisa. Escape para personas `OAS_PRUEBAS_OMITIR=1` (bloqueado para la IA en `git-guard`). Nuevos casos en `test_git_hooks.sh`.
+  - Aviso de `contexto-proyecto` tras traer commits de otras personas con código: indica correr las relacionadas con lo que llegó y reportar qué falla y de qué autor, sin corregir código ajeno.
+- Nueva skill `pruebas-funcionales-oas` sobre la skill oficial `playwright-cli`: Playwright en el repo del MF (`e2e/`, planes versionados, un escenario por archivo etiquetado por módulo), stack local root/MF/MID/CRUD, sesión OIDC por rol guardada tras el login manual (sin credenciales; `.auth/` ignorado), datos marcados y limpiados, evidencias en `.claude/docs/pruebas/` para `doc-issue-oas` y `seguridad-oas`.
+- `mid-oas`, `crud-oas`: reglas de equipo para specs y suite completa en la verificación. `seguridad-oas`: suite completa separando lo introducido de lo preexistente. `code-review-oas`: capa 4.6 de pruebas. `planificar-issue`: cada tarea indica su spec y el cierre incluye pruebas funcionales. `release-oas` y `doc-issue-oas`: usan las e2e y su informe.
+
 ## 1.3.0 · 2026-10-26
 
 - Precedencia explícita en las skills: manda `udistrital/lineamientos_oas`; la guía del proyecto `udistrital/sisifo_documentacion` (`docs/backend/backend_guide.md`, `utils/sonar`) sólo tapa huecos. Lo que la contradice no se aplica (rama `fix/`, ramas desde `release/*`, `master` sin tag, `X.Y.Z.prod`, plural obligatorio, `DELETE` `204` sin envoltura, paginación `pagina`/`limite`).

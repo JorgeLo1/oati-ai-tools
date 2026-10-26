@@ -124,12 +124,19 @@ Complemento de la guía del proyecto (el lineamiento OAS no lo define):
 
 `*.service.spec.ts` con los servicios compartidos mockeados (`{ provide: AuditoriaCrudService, useValue: { traerDataCrud: jest.fn(), post: jest.fn(), … } }`). Cubre: caso feliz, id faltante (`BadRequestException`), recurso inexistente (`NotFoundException`), falla del servicio externo, y para escrituras en varios pasos, que se compense si falla un paso intermedio.
 
+Reglas de equipo (`AGENTS.md` §8), porque varias personas agregan casos de uso al mismo módulo:
+- **Specs nuevos**: uno por caso de uso (`<modulo>.<caso>.spec.ts`, p. ej. `formulacion-planes.auditado.spec.ts`) en vez de crecer un único `<modulo>.service.spec.ts`. No migres los existentes salvo que los toques.
+- **Datos de prueba** del módulo en `test/fixtures/<modulo>.ts`: funciones que arman entidades y respuestas del CRUD (`respuestaCrud(data)`, `crearPlan({...})`). Si el repo no lo tiene, créalo con el primer spec nuevo del módulo.
+- **Si cambias un contrato** (lo que devuelve un servicio compartido, la forma de `Data`, un ID de config), busca los specs que lo usan (`grep -rln "<metodo>\|<campo>" src --include=*.spec.ts`) y arréglalos todos, también los de otras personas.
+- Nunca borres, saltes ni debilites un test ajeno para que pase; si el cambio de comportamiento es intencional, actualízalo y dilo en la salida.
+
 ## 10. Verificación
 
 ```bash
 pnpm build
 pnpm lint
 pnpm test -- <recurso>
+pnpm test            # suite completa: lo que rompe tu cambio en otros módulos también es tuyo
 ```
 
 Reporta resultados reales; si algo falla por causas preexistentes, dilo. Si puedes, levanta el MID (`pnpm start:dev`) con el CRUD local y prueba el endpoint desde `/swagger` o `curl`, mostrando la respuesta.

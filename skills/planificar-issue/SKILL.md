@@ -138,19 +138,20 @@ Completa "Plan de tareas":
 
 ```markdown
 ### <repo> (en orden: CRUD → MID → MF)
-- [ ] T1 — <qué> · Archivos: <≤5> · Skill: /crud-oas + /endpoint-oas · Verificación: <build/test/prueba manual> · Depende de: —
+- [ ] T1 — <qué> · Archivos: <≤5> · Skill: /crud-oas + /endpoint-oas · Spec: <archivo .spec que agrega o actualiza> · Verificación: <build/test/prueba manual> · Depende de: —
 - [ ] T2 — …
 ### Commits
 - <cómo se agrupan: por tarea o por grupo lógico>
 ### Cierre
-- [ ] /seguridad-oas sobre el diff de cada repo
+- [ ] Pruebas funcionales de los flujos tocados con /pruebas-funcionales-oas (si la issue tiene interfaz)
+- [ ] /seguridad-oas sobre el diff de cada repo (incluye la suite completa)
 - [ ] /commit-oas
 - [ ] Criterios de aceptación verificados
 - [ ] /documentar-cambios
 - [ ] /doc-issue-oas (si la issue lo exige)
 ```
 
-Reglas: cada tarea deja el sistema compilando y es verificable sola; ≤5 archivos (si no, divídela); dependencias explícitas; la skill que la gobierna; verificación concreta.
+Reglas: cada tarea deja el sistema compilando y es verificable sola; ≤5 archivos (si no, divídela); dependencias explícitas; la skill que la gobierna; verificación concreta. Toda tarea que agrega o cambia comportamiento dice qué spec agrega o actualiza (`AGENTS.md` §8); si cambia un contrato, lista también los specs existentes que lo usan y habrá que ajustar.
 
 Pregunta con `AskUserQuestion` (mencionando el nombre del archivo): `Aprobar plan y empezar (Recomendado)` · `Aprobar plan, sólo dejar planificado` · `Ajustar plan`. Con cualquiera de las dos primeras: `estado: aprobada` + línea en Historial (el guardián valida esa respuesta). Si eligió sólo dejar planificado, termina aquí.
 

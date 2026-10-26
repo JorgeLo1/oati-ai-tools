@@ -127,13 +127,13 @@ else
     c_er "Ya tienes core.hooksPath global = $GLOBAL. No lo reemplazo: integra $RAIZ_REPO/git-hooks a mano o quítalo y reintenta."
   elif [ "$SOLO_VERIFICAR" = 1 ]; then
     [ "$GLOBAL" ] && c_ok "core.hooksPath global → $HOOKS_DIR" || c_av "Hooks de git no instalados"
-    for f in pre-commit commit-msg oas_git_hooks.py oas_config.py; do
+    for f in pre-commit commit-msg oas_git_hooks.py oas_pruebas.py oas_config.py; do
       [ -f "$HOOKS_DIR/$f" ] || c_av "Falta $HOOKS_DIR/$f"
     done
   else
     mkdir -p "$HOOKS_DIR"
-    cp "$RAIZ_REPO/git-hooks/pre-commit" "$RAIZ_REPO/git-hooks/commit-msg" "$RAIZ_REPO/git-hooks/oas_git_hooks.py" "$RAIZ_REPO/scripts/oas_config.py" "$HOOKS_DIR/"
-    chmod +x "$HOOKS_DIR/pre-commit" "$HOOKS_DIR/commit-msg" "$HOOKS_DIR/oas_git_hooks.py"
+    cp "$RAIZ_REPO/git-hooks/pre-commit" "$RAIZ_REPO/git-hooks/commit-msg" "$RAIZ_REPO/git-hooks/oas_git_hooks.py" "$RAIZ_REPO/git-hooks/oas_pruebas.py" "$RAIZ_REPO/scripts/oas_config.py" "$HOOKS_DIR/"
+    chmod +x "$HOOKS_DIR/pre-commit" "$HOOKS_DIR/commit-msg" "$HOOKS_DIR/oas_git_hooks.py" "$HOOKS_DIR/oas_pruebas.py"
     git config --global core.hooksPath "$HOOKS_DIR" && c_ok "core.hooksPath global → $HOOKS_DIR"
   fi
   # repos con su propio hooksPath local (husky, etc.): el local tiene prioridad y nuestros hooks no corren ahí
@@ -169,7 +169,7 @@ fi
 
 # ------------------------------------------------------------------ instalación manual previa
 MANUAL=()
-for s in commit-oas planificar-issue endpoint-oas crud-oas mid-oas seguridad-oas documentar-cambios doc-issue-oas code-review-oas release-oas; do
+for s in commit-oas planificar-issue endpoint-oas crud-oas mid-oas seguridad-oas documentar-cambios doc-issue-oas code-review-oas release-oas pruebas-funcionales-oas; do
   [ -d "$HOME/.claude/skills/$s" ] && MANUAL+=("$HOME/.claude/skills/$s")
 done
 [ -f "$HOME/.claude/agents/contexto-proyecto.md" ] && MANUAL+=("$HOME/.claude/agents/contexto-proyecto.md")

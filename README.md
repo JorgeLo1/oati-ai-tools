@@ -26,10 +26,10 @@ Funciona completo en **Claude Code** (como plugin) y se puede portar a **otras I
 | Pieza | Qué hace | Dónde |
 |---|---|---|
 | **Reglas del equipo** | Flujo de trabajo, reglas de git y disciplina para la IA | [AGENTS.md](AGENTS.md) → se instala en la carpeta udistrital |
-| **10 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación, code review de PR, release y despliegue | [skills/](skills/) |
+| **11 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación, code review de PR, release y despliegue, pruebas funcionales | [skills/](skills/) |
 | **Agente de contexto** | Genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local) | [agents/](agents/) |
 | **Guardianes (Claude Code)** | Bloquean código sin plan aprobado o sin la skill del dominio, commits sin revisión de seguridad, push/PR, atribución a IA, edición de `.env` | [scripts/](scripts/), [hooks/hooks.json](hooks/hooks.json) |
-| **Hooks de git** | Validan rama GitFlow, etiqueta del commit, atribución a IA y secretos **en cualquier herramienta** | [git-hooks/](git-hooks/) |
+| **Hooks de git** | Validan rama GitFlow, etiqueta del commit, atribución a IA, secretos y que pasen las pruebas unitarias relacionadas con lo que commiteas, **en cualquier herramienta** | [git-hooks/](git-hooks/) |
 | **Contrato y pruebas** | Qué debe hacer cada control y sus casos de aceptación; base para portar a otras IAs | [spec/](spec/) |
 
 Nada de esto se commitea en los repositorios institucionales: las reglas viven en la carpeta que agrupa los repos (no es un repo git), el contexto de cada repo en `.claude/` (excluido de git) y las especificaciones en `<udistrital>/.claude/specs/`.
@@ -86,8 +86,9 @@ La IA identifica qué soporta tu herramienta y propone un plan, que debes aproba
 /oas:planificar-issue    → lee la issue, mockups y código; te pregunta las decisiones (con una opción recomendada);
                            escribe la especificación y el plan → tú los apruebas
    ├─ por cada tarea:      /oas:crud-oas · /oas:mid-oas · /oas:endpoint-oas (las invoca sola)
-   ├─ antes de commitear:  /oas:seguridad-oas → /oas:commit-oas (te pide confirmar)
-   └─ al cerrar:           criterios verificados → /oas:documentar-cambios → /oas:doc-issue-oas
+   ├─ antes de commitear:  /oas:seguridad-oas (incluye la suite completa) → /oas:commit-oas (te pide confirmar)
+   └─ al cerrar:           /oas:pruebas-funcionales-oas (si hay interfaz) → criterios verificados
+                           → /oas:documentar-cambios → /oas:doc-issue-oas
 git push / PR            → los haces tú
 
 /oas:code-review-oas <PR>  → revisar el PR de un compañero (sin descargar sus cambios; informe local)
@@ -110,6 +111,9 @@ En la práctica basta con decir *"vamos con la issue #905"*: la IA sigue el fluj
 | `doc-issue-oas` | Documentar la issue | Comentario "Avances issue DD/MM/YYYY" listo para la issue (lo publica sólo si confirmas) |
 | `code-review-oas` | Revisar el PR de otra persona | Lee el PR con `gh` (sin checkout, fetch ni pull en tu repo), entiende la implementación de punta a punta y valida sus contratos contra los repos de los que depende (los clona si no los tienes y genera su contexto si falta). Lo mide contra la issue (y la especificación si la tienes), las reglas de endpoint/CRUD/MID, el checklist de seguridad, ramas y commits OAS y bugs de lógica, con tono de compañeros. Informe en `.claude/docs/revisiones/pr-<n>.md` con comentarios listos para copiar. Nunca publica en GitHub |
 | `release-oas` | Preparar un release o paso a pruebas/producción | Versión SemVer, rama `release/X.Y.Z`, Swagger actualizado y convertido a OpenAPI 2.0 para el registro en WSO2, checklist del lineamiento de despliegues con responsables, plan de rollback (N y N−1), tag en `master` y limpieza. Informe en `.claude/docs/releases/`. No hace push, PR, tags ni despliegues |
+| `pruebas-funcionales-oas` | Validar flujos con interfaz o crear specs e2e | Sobre la skill oficial `playwright-cli` (instalar aparte: `npm install -g @playwright/cli@latest` y `npx skills add microsoft/playwright-cli@playwright-cli -g`). Prepara Playwright en el MF (`e2e/`, planes versionados, un escenario por archivo etiquetado por módulo), levanta el stack local, usa sesiones por rol guardadas tras tu login manual (nunca credenciales), cuida los datos y deja evidencias en `.claude/docs/pruebas/` para `doc-issue-oas` |
+
+Las pruebas son de todos: quien cambia un contrato arregla los tests que rompe, la suite completa se corre antes del PR, un test ajeno nunca se borra ni se salta, y el `pre-commit` corre las pruebas relacionadas con lo que commiteas. Detalle en [AGENTS.md](AGENTS.md) §8.
 
 ## Bloqueos y cómo resolverlos
 
@@ -130,6 +134,7 @@ Los bloqueos son intencionales. La IA debe resolverlos sola siguiendo el mensaje
 | `.env … no se edita desde Claude` | Secretos | La IA te dice qué variable agregar; la pones tú |
 | Te pide confirmar editar skills/scripts/AGENTS.md | Configuración de las herramientas | Acepta sólo si tú pediste ese cambio |
 | `✖ [oas-git-hooks] …` al commitear | Hook de git (rama, etiqueta, secretos) | Corrige lo indicado; si eres persona y es una emergencia: `OAS_HOOKS_OMITIR=1 git commit …` |
+| `✖ [oas-git-hooks] Commit bloqueado: fallan pruebas relacionadas…` | Tu cambio rompe specs relacionados (Jest o `go test`) | Corrige el código o actualiza el test si el cambio de comportamiento es intencional y explícalo en el PR. Si la suite no arranca (configuración rota) sólo avisa y deja pasar. Emergencia de una persona: `OAS_PRUEBAS_OMITIR=1 git commit …` |
 
 Para desactivar los guardianes en un repo puntual, crea el archivo vacío `<repo>/.claude/.skill-guard-off`. Para el contexto automático, `<repo>/.claude/.contexto-off`.
 

@@ -26,6 +26,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import oas_config  # noqa: E402
 
 SCRIPT = os.path.abspath(__file__)
+PRUEBAS = os.path.join(os.path.dirname(os.path.dirname(SCRIPT)), "git-hooks", "oas_pruebas.py")
+EXT_CODIGO = (".ts", ".js", ".mjs", ".cjs", ".go")
 
 MAX_ARCHIVOS = 60
 MAX_COMMITS = 30
@@ -200,12 +202,20 @@ def revisar(root, sesion):
             lista_a += f"\n  - … y {len(archivos) - MAX_ARCHIVOS} más"
         detalle = f"Commits traídos ({len(commits)}):\n{lista_c}\nArchivos tocados ({len(archivos)}):\n{lista_a}"
 
+    pruebas = ""
+    if commits is not None and any(a.endswith(EXT_CODIGO) for a in archivos):
+        pruebas = (
+            f"\nAdemás, comprueba las pruebas unitarias relacionadas con lo que llegó: "
+            f"`python3 {PRUEBAS} --repo {root} --desde {desde_valido}` (salida 0 = pasan, 1 = fallan, 2 = no se pudo evaluar). "
+            "Repórtalo en una línea; si fallan, di qué specs y de qué commit/autor vienen. No corrijas código ni tests ajenos "
+            "sin preguntar al usuario; si la suite no arranca, es deuda preexistente: dilo y sigue."
+        )
     return (
         f"[contexto-proyecto] Se detectaron cambios traídos (pull/merge/checkout) en {root} desde la última sincronización del contexto.\n"
         f"{detalle}\n"
         "ANTES de seguir con la tarea del usuario, lanza el agente `contexto-proyecto` (subagent_type: contexto-proyecto, "
         f"en primer plano) con el prompt: \"MODO: actualizar. REPO: {root}. RANGO: {rango}. SCRIPT: {SCRIPT}\". "
-        "Cuando termine, resume en una línea qué documentos cambió y continúa con la tarea."
+        f"Cuando termine, resume en una línea qué documentos cambió y continúa con la tarea.{pruebas}"
     )
 
 
