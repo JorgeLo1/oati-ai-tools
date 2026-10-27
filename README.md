@@ -12,6 +12,7 @@ Funciona completo en **Claude Code** (como plugin) y se puede portar a **otras I
 - [Instalación](#instalación) · [Claude Code](#claude-code) · [Otras IAs](#otras-ias)
 - [Cómo se trabaja una issue](#cómo-se-trabaja-una-issue)
 - [Skills](#skills)
+- [Pruebas funcionales con Playwright](#pruebas-funcionales-con-playwright)
 - [Bloqueos y cómo resolverlos](#bloqueos-y-cómo-resolverlos)
 - [Especificaciones](#especificaciones)
 - [Contexto del proyecto](#contexto-del-proyecto)
@@ -69,7 +70,14 @@ claude plugin install oas@oas-udistrital
 
 (Dentro de Claude Code también: `/plugin marketplace add …` y `/plugin install oas@oas-udistrital`.) Abre una sesión nueva. Las skills quedan como `/oas:planificar-issue`, `/oas:commit-oas`, etc.
 
-**Activa la actualización automática.** Claude Code sólo la trae activada para los marketplaces oficiales de Anthropic; para este (de terceros) viene apagada y el plugin se queda en la versión que instalaste. En Claude Code: `/plugin` → *Marketplaces* → `oas-udistrital` → activar la actualización automática. Con eso, cada vez que abras Claude Code trae la última versión publicada (la sesión ya abierta sigue con la que cargó: reinicia para verla).
+**Activa la actualización automática.** Claude Code sólo la trae activada para los marketplaces oficiales de Anthropic; para este (de terceros) viene apagada y el plugin se queda en la versión que instalaste. Se activa una sola vez:
+
+1. Abre Claude Code en la terminal (`claude`). Si trabajas en el panel de VS Code y `/plugin` no te muestra la pantalla de marketplaces, abre la terminal integrada y ejecuta `claude`: el ajuste es de tu usuario y vale para los dos.
+2. Escribe `/plugin` y Enter.
+3. Ve a la pestaña **Marketplaces** (flechas o Tab), selecciona **oas-udistrital** y Enter.
+4. Elige **Enable auto-update** (activar la actualización automática).
+
+Con eso, cada vez que abras Claude Code trae la última versión publicada. La sesión que ya estaba abierta sigue con la versión que cargó: reiníciala para ver la nueva. La CLI (`claude plugin …`) no tiene opción para activarla; sólo `claude plugin marketplace update oas-udistrital` y `claude plugin update oas@oas-udistrital` para actualizar a mano.
 
 Si antes tenías estas herramientas copiadas a mano en `~/.claude`, retíralas para no duplicar hooks: `bash instalar.sh --migrar-desde-manual` (las mueve a un respaldo).
 
@@ -113,9 +121,84 @@ En la práctica basta con decir *"vamos con la issue #905"*: la IA sigue el fluj
 | `doc-issue-oas` | Documentar la issue | Comentario "Avances issue DD/MM/YYYY" listo para la issue (lo publica sólo si confirmas) |
 | `code-review-oas` | Revisar el PR de otra persona | Lee el PR con `gh` (sin checkout, fetch ni pull en tu repo), entiende la implementación de punta a punta y valida sus contratos contra los repos de los que depende (los clona si no los tienes y genera su contexto si falta). Lo mide contra la issue (y la especificación si la tienes), las reglas de endpoint/CRUD/MID, el checklist de seguridad, ramas y commits OAS y bugs de lógica, con tono de compañeros. Informe en `.claude/docs/revisiones/pr-<n>.md` con comentarios listos para copiar. Nunca publica en GitHub |
 | `release-oas` | Preparar un release o paso a pruebas/producción | Versión SemVer, rama `release/X.Y.Z`, Swagger actualizado y convertido a OpenAPI 2.0 para el registro en WSO2, checklist del lineamiento de despliegues con responsables, plan de rollback (N y N−1), tag en `master` y limpieza. Informe en `.claude/docs/releases/`. No hace push, PR, tags ni despliegues |
-| `pruebas-funcionales-oas` | Validar flujos con interfaz o crear specs e2e | Sobre la skill oficial `playwright-cli` (instalar aparte: `npm install -g @playwright/cli@latest` y `npx skills add microsoft/playwright-cli@playwright-cli -g`). Prepara Playwright en el MF (`e2e/`, planes versionados, un escenario por archivo etiquetado por módulo), levanta el stack local, hace el login por rol automáticamente con usuarios de prueba dedicados de `.env.e2e` (no versionado; la IA nunca lee sus valores; en Drone, secrets), separa escenarios `@lectura`/`@escritura` para correr en el ambiente de pruebas (funcionamiento y, cuando se autorice, Drone), escribe la guía `e2e/README.md` y deja evidencias en `.claude/docs/pruebas/` para `doc-issue-oas` |
+| `pruebas-funcionales-oas` | Validar flujos con interfaz o crear specs e2e | Playwright en el MF: escenarios desde los criterios de aceptación, login automático por rol, `@lectura`/`@escritura`, evidencias para `doc-issue-oas`. Ver [Pruebas funcionales con Playwright](#pruebas-funcionales-con-playwright) |
 
-Las pruebas son de todos. **Funcionales (e2e)**: un plan por funcionalidad y un escenario por archivo etiquetado por módulo; antes del PR se corren todos los escenarios del módulo tocado; quien cambia la interfaz actualiza los escenarios que la usan; si llegan cambios de otros al módulo, se sugiere correr sus escenarios; si falla el de otra persona, se le pasa la traza. **Unitarias** (uso local): el `pre-commit` corre las relacionadas con lo que commiteas y quien cambia un contrato arregla los tests que rompe. La evidencia de pruebas en el PR es una recomendación. Detalle en [AGENTS.md](AGENTS.md) §8.
+Unitarias (uso local): el `pre-commit` corre las relacionadas con lo que commiteas y quien cambia un contrato arregla los tests que rompe. Las funcionales tienen su sección: [Pruebas funcionales con Playwright](#pruebas-funcionales-con-playwright). Detalle de las reglas en [AGENTS.md](AGENTS.md) §8.
+
+## Pruebas funcionales con Playwright
+
+Pruebas automatizadas de los flujos de los MF en el navegador, a partir de los criterios de aceptación de cada issue. Sirven al equipo antes de cada PR, a funcionamiento para verificar el sistema antes y después de un cambio y, cuando se autorice, al pipeline después de cada despliegue a pruebas. Las conduce la skill `/oas:pruebas-funcionales-oas`, que usa la skill oficial `playwright-cli` de Microsoft.
+
+### Instalar (una vez por persona)
+
+```bash
+npm install -g @playwright/cli@latest                     # herramienta de navegador
+npx skills add microsoft/playwright-cli@playwright-cli -g  # su skill para Claude Code
+```
+
+En WSL, el login manual (alternativa al automático) necesita ventana: WSLg activo.
+
+### Qué queda en el repo de cada MF
+
+```
+playwright.config.ts            # baseURL, proyectos por rol, globalSetup
+.env.e2e.example                # nombres de las variables (versionado)
+.env.e2e                        # usuarios de prueba por rol (NO versionado; lo crea cada persona)
+e2e/
+  global-setup.ts               # login automático por rol
+  fixtures.ts                   # navegación, login y datos compartidos del MF
+  specs/<funcionalidad>.plan.md # plan de pruebas de cada funcionalidad (versionado)
+  <modulo>/<escenario>.spec.ts  # un escenario por archivo
+  README.md                     # guía para funcionamiento
+  .auth/                        # sesiones guardadas (NO versionado)
+```
+
+La primera vez, la skill propone instalar `@playwright/test` con el gestor del repo y crear esta estructura, como una tarea más de la issue.
+
+### Usuarios de prueba y login
+
+- Cuentas **dedicadas** del ambiente de pruebas, una por rol; nunca personales ni de producción.
+- Mismas variables en todos los MF:
+  ```bash
+  E2E_BASE_URL=http://localhost:4200
+  E2E_JEFE_OCI_USER=   E2E_JEFE_OCI_PASS=
+  E2E_AUDITOR_USER=    E2E_AUDITOR_PASS=
+  E2E_AUDITADO_USER=   E2E_AUDITADO_PASS=
+  ```
+- `.env.e2e` lo crea y llena cada persona (los guardianes no dejan a la IA escribirlo) y la IA nunca lee sus valores. En Drone, las mismas variables como secrets.
+- El login lo hace `global-setup.ts` una vez por rol: sin traza ni video (grabarían la contraseña) y sin reintentos (WSO2 bloquea la cuenta tras varios fallos). Si no hay usuario para un rol, la persona inicia sesión a mano y la sesión se guarda.
+
+### Etiquetas
+
+Cada escenario lleva el módulo (`@programacion`, el nombre de su carpeta en `src/app/modules/`), el rol y si es **`@lectura`** (sólo consulta) o **`@escritura`** (crea o cambia datos). En el ambiente de pruebas compartido sólo corren los `@lectura`, salvo aprobación; los `@escritura` marcan y limpian lo que crean.
+
+### Comandos
+
+```bash
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep @<modulo>   # antes del PR: todos los del módulo
+PLAYWRIGHT_HTML_OPEN=never npx playwright test                    # todo: si cambiaste e2e/fixtures.ts o antes de un release
+E2E_BASE_URL=<url de pruebas> npx playwright test --grep @lectura # funcionamiento, contra el ambiente de pruebas
+npx playwright show-report                                        # reporte con capturas
+```
+
+### Varios en el mismo módulo
+
+| Situación | Qué se hace |
+|---|---|
+| Issue nueva | Plan propio por funcionalidad y escenarios en archivos propios: dos issues en paralelo no chocan |
+| Cambias una pantalla (texto, botón, paso) | Actualizas en el mismo PR los escenarios que la usan |
+| Antes del PR | Corres **todos** los escenarios del módulo, no sólo los tuyos |
+| Llegan cambios de otros al módulo (pull) | El aviso del plugin sugiere correr sus escenarios |
+| Falla el escenario de otra persona por su cambio | Le pasas el escenario y la traza (`npx playwright show-trace`); decide el autor |
+| Cambias `e2e/fixtures.ts` | Corres todas las e2e del MF |
+
+### Evidencias
+
+Cada escenario adjunta la captura del criterio que verifica. La skill deja el informe en `.claude/docs/pruebas/<rama>.md`, que usan `/oas:doc-issue-oas` (sección "Pruebas realizadas") y `/oas:seguridad-oas`.
+
+### Drone (pendiente de autorización)
+
+No van en CI todavía. La propuesta es un paso `e2e_pruebas` después del despliegue al ambiente de pruebas, con la imagen de Playwright, los usuarios como secrets y sólo los escenarios `@lectura`; la skill deja el borrador de la solicitud. No se edita `.drone.yml` sin autorización.
 
 ## Bloqueos y cómo resolverlos
 
@@ -137,6 +220,7 @@ Los bloqueos son intencionales. La IA debe resolverlos sola siguiendo el mensaje
 | Te pide confirmar editar skills/scripts/AGENTS.md | Configuración de las herramientas | Acepta sólo si tú pediste ese cambio |
 | `✖ [oas-git-hooks] …` al commitear | Hook de git (rama, etiqueta, secretos) | Corrige lo indicado; si eres persona y es una emergencia: `OAS_HOOKS_OMITIR=1 git commit …` |
 | `✖ [oas-git-hooks] Commit bloqueado: fallan pruebas relacionadas…` | Tu cambio rompe specs relacionados (Jest o `go test`) | Corrige el código o actualiza el test si el cambio de comportamiento es intencional y explícalo en el PR. Si la suite no arranca (configuración rota) sólo avisa y deja pasar. Emergencia de una persona: `OAS_PRUEBAS_OMITIR=1 git commit …` |
+| `⚠ [oas-git-hooks] Pruebas relacionadas: la suite no arranca…` | Las pruebas corren con el Node que tengas activo en la terminal; si el repo pide otra versión (`.nvmrc`, p. ej. Node ≥24.9 en los MID con NestJS 12), Jest no arranca | `nvm use` en el repo antes de commitear (o desde VS Code, que la terminal integrada tenga esa versión). Si con la versión correcta sigue sin arrancar, es configuración rota del repo: repórtalo |
 
 Para desactivar los guardianes en un repo puntual, crea el archivo vacío `<repo>/.claude/.skill-guard-off`. Para el contexto automático, `<repo>/.claude/.contexto-off`.
 
@@ -177,7 +261,7 @@ claude plugin marketplace update oas-udistrital           # Claude Code: trae la
 ```
 
 Son dos actualizaciones distintas:
-- **Plugin de Claude Code** (skills, guardianes, agente): con la actualización automática activada llega solo al abrir Claude Code; si no, `/plugin` → *Marketplaces* → `oas-udistrital` → actualizar, y reinicia la sesión. `instalar.sh` avisa si el plugin instalado está atrás de la versión del repo.
+- **Plugin de Claude Code** (skills, guardianes, agente): con la actualización automática activada (ver [Instalación](#claude-code)) llega solo al abrir Claude Code; si no, `claude plugin marketplace update oas-udistrital && claude plugin update oas@oas-udistrital` (o `/plugin` → *Marketplaces* → `oas-udistrital` → actualizar), y reinicia la sesión. `instalar.sh` avisa si el plugin instalado está atrás de la versión del repo.
 - **Reglas y hooks de git** (`<udistrital>/AGENTS.md`, `~/.config/oas-ai-tools/git-hooks`): son copias, **no se actualizan con el plugin**. Cada vez que cambien hay que hacer `git pull` en el clon y volver a correr `bash instalar.sh`.
 
 Otras IAs: después de `git pull`, pide de nuevo *"sigue PORTAR.md"*; la IA compara contra su informe anterior y aplica solo lo que cambió.
