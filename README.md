@@ -127,7 +127,7 @@ Unitarias (uso local): el `pre-commit` corre las relacionadas con lo que commite
 
 ## Pruebas funcionales con Playwright
 
-Pruebas automatizadas de los flujos de los MF en el navegador, a partir de los criterios de aceptación de cada issue. Sirven al equipo antes de cada PR, a funcionamiento para verificar el sistema antes y después de un cambio y, cuando se autorice, al pipeline después de cada despliegue a pruebas. Las conduce la skill `/oas:pruebas-funcionales-oas`, que usa la skill oficial `playwright-cli` de Microsoft.
+Pruebas automatizadas de los flujos de los MF en el navegador, a partir de los criterios de aceptación de cada issue, con Playwright, TypeScript y Page Object Model. Sirven al equipo antes de cada PR y, cuando se autorice, a funcionamiento y al pipeline después de cada despliegue a pruebas. Las conduce la skill `/oas:pruebas-funcionales-oas`, que usa la skill oficial `playwright-cli` de Microsoft y la plantilla [plantillas/e2e/](plantillas/e2e/). Implementación de referencia: `plan_anual_auditoria_mf/e2e/` (SISIFO, udistrital/sisifo_documentacion#939).
 
 ### Instalar (una vez por persona)
 
@@ -136,69 +136,76 @@ npm install -g @playwright/cli@latest                     # herramienta de naveg
 npx skills add microsoft/playwright-cli@playwright-cli -g  # su skill para Claude Code
 ```
 
-En WSL, el login manual (alternativa al automático) necesita ventana: WSLg activo.
+En WSL, para ver el navegador (`--ui`, `--headed`, `--debug`) hay que tener la interfaz gráfica: `guiApplications=true` en `C:\Users\<usuario>\.wslconfig` y `wsl --shutdown` (luego `ls /tmp/.X11-unix/` muestra `X0`). Sin ella, `npx playwright test --ui-port=9323` y abrir `http://localhost:9323` en el navegador de Windows.
 
 ### Qué queda en el repo de cada MF
 
+La primera vez, la skill copia la plantilla como una tarea más de la issue. `e2e/` es **autocontenido** (su propio `package.json` con npm): no toca las dependencias ni el lockfile del MF.
+
 ```
-playwright.config.ts            # baseURL, proyectos por rol, globalSetup
-.env.e2e.example                # nombres de las variables (versionado)
-.env.e2e                        # usuarios de prueba por rol (NO versionado; lo crea cada persona)
 e2e/
-  global-setup.ts               # login automático por rol
-  fixtures.ts                   # navegación, login y datos compartidos del MF
-  specs/<funcionalidad>.plan.md # plan de pruebas de cada funcionalidad (versionado)
-  <modulo>/<escenario>.spec.ts  # un escenario por archivo
-  README.md                     # guía para funcionamiento
-  .auth/                        # sesiones guardadas (NO versionado)
+  package.json · package-lock.json · tsconfig.json
+  playwright.config.ts          # roles del proyecto y opciones de ejecución
+  .env.e2e.example              # nombres de las variables (versionado)
+  README.md                     # guía para el equipo y funcionamiento
+  core/                         # genérico (plantilla del plugin): login WSO2 por rol, bloqueo de
+                                #   escrituras en @lectura, simularGet, CORS del core-mf, clase base del POM
+  pages/                        # page objects del proyecto (shell.page.ts = menú del root)
+  specs/<funcionalidad>.plan.md # plan de pruebas de cada funcionalidad
+  tests/<modulo>/<escenario>.spec.ts   # un escenario por archivo
+  .env.e2e · .auth/ · playwright-report/ · test-results/   # NO versionados
 ```
 
-La primera vez, la skill propone instalar `@playwright/test` con el gestor del repo y crear esta estructura, como una tarea más de la issue.
+Además, en el MF: entradas en `.gitignore` y exclusión de `e2e/` en Jest y en el `tsconfig.json` raíz.
 
 ### Usuarios de prueba y login
 
 - Cuentas **dedicadas** del ambiente de pruebas, una por rol; nunca personales ni de producción.
-- Mismas variables en todos los MF:
-  ```bash
-  E2E_BASE_URL=http://localhost:4200
-  E2E_JEFE_OCI_USER=   E2E_JEFE_OCI_PASS=
-  E2E_AUDITOR_USER=    E2E_AUDITOR_PASS=
-  E2E_AUDITADO_USER=   E2E_AUDITADO_PASS=
-  ```
-- `.env.e2e` lo crea y llena cada persona (los guardianes no dejan a la IA escribirlo) y la IA nunca lee sus valores. En Drone, las mismas variables como secrets.
-- El login lo hace `global-setup.ts` una vez por rol: sin traza ni video (grabarían la contraseña) y sin reintentos (WSO2 bloquea la cuenta tras varios fallos). Si no hay usuario para un rol, la persona inicia sesión a mano y la sesión se guarda.
+- Mismas variables en todos los MF, en `e2e/.env.e2e`: `E2E_BASE_URL`, `E2E_<ROL>_USER`, `E2E_<ROL>_PASS` (`jefe-dependencia` ↔ `E2E_JEFE_DEPENDENCIA_*`). La variable dice el rol real de la cuenta.
+- `e2e/.env.e2e` lo crea y llena cada persona (los guardianes no dejan a la IA escribirlo) y la IA nunca lee sus valores. En Drone, las mismas variables como secrets.
+- El login lo hace `core/global-setup.ts` una vez por rol y reutiliza la sesión mientras siga vigente: sin traza ni video (grabarían la contraseña) y sin reintentos (WSO2 bloquea la cuenta tras varios fallos). Un rol sin usuario se omite. Si no hay usuario para un rol, la persona inicia sesión a mano y la sesión se guarda.
 
 ### Etiquetas
 
-Cada escenario lleva el módulo (`@programacion`, el nombre de su carpeta en `src/app/modules/`), el rol y si es **`@lectura`** (sólo consulta) o **`@escritura`** (crea o cambia datos). En el ambiente de pruebas compartido sólo corren los `@lectura`, salvo aprobación; los `@escritura` marcan y limpian lo que crean.
+Cada escenario lleva el módulo (`@programacion`, el nombre de su carpeta en `src/app/modules/`, o `@navegacion`), el rol (`@auditor`: cada proyecto corre solo los suyos) y si es **`@lectura`** (sólo consulta) o **`@escritura`** (crea o cambia datos). En los `@lectura` el marco **aborta** cualquier escritura a las APIs, por eso pueden correr en el ambiente compartido. **`@simulado`** marca los que preparan un estado reescribiendo una respuesta GET.
+
+### En la planificación
+
+`/oas:planificar-issue` busca en `e2e/` los escenarios y page objects que usan las pantallas que cambia la issue, agrega a la especificación una sección **Pruebas E2E** (escenarios nuevos y existentes a ajustar) y una tarea de escenarios en el plan; el cierre exige todos los escenarios del módulo en verde.
 
 ### Comandos
 
+Desde `e2e/`:
+
 ```bash
-PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep @<modulo>   # antes del PR: todos los del módulo
-PLAYWRIGHT_HTML_OPEN=never npx playwright test                    # todo: si cambiaste e2e/fixtures.ts o antes de un release
-E2E_BASE_URL=<url de pruebas> npx playwright test --grep @lectura # funcionamiento, contra el ambiente de pruebas
-npx playwright show-report                                        # reporte con capturas
+npm test                                   # todo
+npx playwright test --grep @<modulo>       # antes del PR: todos los del módulo
+npx playwright test --ui                   # modo UI: escenario por escenario, pasos y red
+npx playwright test --headed               # el navegador haciendo el flujo
+E2E_BASE_URL=<url de pruebas> npm run test:lectura   # funcionamiento, contra el ambiente de pruebas
+npm run report                             # reporte HTML con capturas (última corrida)
 ```
+
+Resultados: consola (✓/✘), `e2e/playwright-report/` (reporte) y `e2e/test-results/` (trazas de los que fallan: `npx playwright show-trace …`). Las trazas y el reporte contienen la sesión de la cuenta de prueba: sólo dentro del equipo.
 
 ### Varios en el mismo módulo
 
 | Situación | Qué se hace |
 |---|---|
 | Issue nueva | Plan propio por funcionalidad y escenarios en archivos propios: dos issues en paralelo no chocan |
-| Cambias una pantalla (texto, botón, paso) | Actualizas en el mismo PR los escenarios que la usan |
+| Cambias una pantalla (texto, botón, paso) | Actualizas en el mismo PR el page object y los escenarios que la usan |
 | Antes del PR | Corres **todos** los escenarios del módulo, no sólo los tuyos |
 | Llegan cambios de otros al módulo (pull) | El aviso del plugin sugiere correr sus escenarios |
-| Falla el escenario de otra persona por su cambio | Le pasas el escenario y la traza (`npx playwright show-trace`); decide el autor |
-| Cambias `e2e/fixtures.ts` | Corres todas las e2e del MF |
+| Falla el escenario de otra persona por su cambio | Le pasas el escenario y la traza; decide el autor |
+| Cambias `e2e/core/` o un page object compartido | Corres todas las e2e del MF; `core/` se mejora en la plantilla del plugin |
 
 ### Evidencias
 
 Cada escenario adjunta la captura del criterio que verifica. La skill deja el informe en `.claude/docs/pruebas/<rama>.md`, que usan `/oas:doc-issue-oas` (sección "Pruebas realizadas") y `/oas:seguridad-oas`.
 
-### Drone (pendiente de autorización)
+### Drone y funcionamiento (pendiente de autorización)
 
-No van en CI todavía. La propuesta es un paso `e2e_pruebas` después del despliegue al ambiente de pruebas, con la imagen de Playwright, los usuarios como secrets y sólo los escenarios `@lectura`; la skill deja el borrador de la solicitud. No se edita `.drone.yml` sin autorización.
+Todavía no van en CI. La propuesta es un paso `e2e_pruebas` después del despliegue al ambiente de pruebas (`cd e2e && npm ci && npm run test:lectura`, imagen de Playwright, usuarios como secrets, sólo `@lectura`, detiene el pipeline si falla), y que funcionamiento corra los mismos `@lectura` contra el ambiente de pruebas. La skill deja el borrador de la solicitud; no se edita `.drone.yml` sin autorización.
 
 ## Bloqueos y cómo resolverlos
 
@@ -279,7 +286,7 @@ hooks/hooks.json  hooks del plugin de Claude Code
 scripts/          guardianes y avisos (Python, sin dependencias) + tests/run_casos.py
 git-hooks/        hooks de git del equipo + tests/test_git_hooks.sh
 spec/             contratos.md (R0–R13, A1–A3, H1–H2) y casos.json (casos de aceptación)
-plantillas/       CLAUDE.md para la carpeta udistrital
+plantillas/       CLAUDE.md para la carpeta udistrital y e2e/ (marco de pruebas Playwright)
 instalar.sh desinstalar.sh
 ```
 

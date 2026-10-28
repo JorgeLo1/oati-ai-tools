@@ -2,6 +2,33 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.7.0 · 2026-10-27
+
+Marco de pruebas E2E validado en `plan_anual_auditoria_mf` (udistrital/sisifo_documentacion#939).
+
+- Nueva plantilla `plantillas/e2e/`: carpeta `e2e/` autocontenida para cualquier MF.
+  - `package.json` propio (solo `@playwright/test` 1.64.1 y TypeScript, con npm) y `tsconfig.json`.
+  - `playwright.config.ts` con `ROLES`, `.env.e2e.example`, `README.md` para el equipo y funcionamiento.
+  - `core/` genérico: un proyecto por rol con `grep @<rol>`, que omite los roles sin usuario; login WSO2 real (botón "Iniciar Sesión", `#usernameUserInput`, `#password`) que reutiliza la sesión vigente; parche CORS del core-mf y overlay del dev-server; fixtures con **bloqueo automático de escrituras en `@lectura`**, errores de la página y `simularGet` para `@simulado`; clase base del Page Object Model.
+  - `pages/shell.page.ts` (menú del root) y un escenario semilla por rol.
+- `pruebas-funcionales-oas` reescrita sobre esa estructura.
+  - Instalación desde la plantilla, con ajustes del MF: `.gitignore` con `!/e2e/package-lock.json`, y exclusión en Jest y `tsconfig`.
+  - Exploración antes de fijar selectores, page objects y `test.step` con lenguaje de negocio.
+  - `@simulado`.
+  - Cómo verlo en vivo (`--ui`, `--headed`, WSL con `guiApplications`, `--ui-port`), dónde quedan reporte y trazas, y el cuidado al compartirlos (contienen la sesión).
+  - Borrador de Drone con `cd e2e && npm ci && npm run test:lectura`.
+  - Corrige la plantilla de login anterior, que no coincidía con el login real, y el error por el que cada escenario corría con todos los roles.
+- `planificar-issue`: la planificación incluye las pruebas e2e.
+  - Fase 1: busca los escenarios y page objects que usan las pantallas que cambia la issue.
+  - Fase 3: sección **Pruebas E2E** en la especificación (escenarios nuevos y existentes a ajustar, datos, crear `e2e/`).
+  - Fase 4: tarea de escenarios.
+  - Cierre: todos los escenarios del módulo en verde.
+- `AGENTS.md` §8: estructura `e2e/` desde la plantilla; las e2e "todavía no van en CI: pendiente de autorización" (antes decía que dependían del login institucional); planificar escenarios nuevos y afectados; `e2e/.env.e2e`.
+- `contexto-proyecto.py`: el aviso tras un pull detecta `e2e/playwright.config.*` y los módulos en `e2e/tests/<modulo>/` y sugiere `cd e2e && npx playwright test --grep …`. Con la estructura nueva, antes nunca se disparaba. Contrato actualizado.
+- `code-review-oas`: revisa page objects y escenarios afectados, selectores fuera de page objects, `waitForTimeout`, escrituras sin `@escritura`, cambios en `e2e/core/` y credenciales en el diff.
+- Casos E07d (escribir `e2e/.env.e2e` → bloquear) y E07e (`e2e/.env.e2e.example` → permitir).
+- README: sección de pruebas funcionales actualizada.
+
 ## 1.6.1 · 2026-10-26
 
 - `instalar.sh`: avisa si el plugin instalado en Claude Code está atrás de la versión del repo y recuerda activar la actualización automática del marketplace `oas-udistrital` (Claude Code la trae apagada para marketplaces de terceros).

@@ -20,7 +20,8 @@ Ninguna línea de código antes de que la especificación y el plan estén **apr
 | 3 | `/endpoint-oas` (modo diseñar) | Rutas nuevas o cambiadas, **dentro de la especificación** |
 | 3 | `/crud-oas` (§1 Modelado, §3) | Colecciones/campos/índices y datos existentes, **dentro de la especificación** |
 | 3 | `/mid-oas` (§1, §4, §5) | Servicios del MID: capas, concurrencia, escrituras en varios pasos |
-| 5 | `/crud-oas`, `/mid-oas`, `/endpoint-oas` | Implementar cada tarea con las reglas de su skill |
+| 3–4 | `/pruebas-funcionales-oas` (Paso 0, 4, 5) | Escenarios e2e nuevos y existentes afectados, en MF con interfaz |
+| 5 | `/crud-oas`, `/mid-oas`, `/endpoint-oas`, `/pruebas-funcionales-oas` | Implementar cada tarea con las reglas de su skill |
 | 5 | `/seguridad-oas` → `/commit-oas` (fase B) | Antes de cada commit, con confirmación del usuario |
 | 6 | `/documentar-cambios`, `/doc-issue-oas` | Documentar a partir de la especificación |
 
@@ -71,6 +72,7 @@ actualizado: AAAA-MM-DD
   y ábrelas con Read. Si la issue menciona un zip/carpeta local o un `DESIGN.md` sin ruta, pídela en la Fase 2.
 - **Contexto**: `.claude/CLAUDE.md` y `.claude/docs/` de cada repo afectado. Si un repo afectado no tiene contexto, lanza el agente `contexto-proyecto` (en el plugin: `oas:contexto-proyecto`) con `MODO: generar. REPO: <repo>. SCRIPT: ${CLAUDE_PLUGIN_ROOT}/scripts/contexto-proyecto.py` y espera.
 - **Código**: componentes/servicios/endpoints a tocar, quién más los usa (compartidos), IDs en `environment`/`config`, y si el **backend ya soporta** lo que piden la issue o el mockup (busca el campo/endpoint en CRUD y MID). Esto decide qué entra y qué no.
+- **Pruebas e2e** (MF con interfaz): ¿el MF tiene `e2e/playwright.config.ts`? Si sí, busca los escenarios y page objects que usan las pantallas, textos o botones que cambia la issue (`grep -rn "<texto o nombre accesible>" e2e/pages e2e/tests`) y lista los planes del módulo (`e2e/specs/`). Si no, anota que habrá que crear `e2e/` desde la plantilla del plugin.
 - **Repos afectados** y orden (CRUD → MID → MF).
 
 ## Fase 2 — Supuestos y preguntas
@@ -93,6 +95,7 @@ actualizado: AAAA-MM-DD
 - Rutas nuevas o cambiadas → invoca `/endpoint-oas` en modo **diseñar**; su tabla, consumidores y versión van a "Diseño técnico → Endpoints".
 - Colecciones/tablas o campos → invoca `/crud-oas` y aplica **sólo** §1 (Modelado) y §3 (modificar existente); van a "Diseño técnico → Modelo de datos".
 - Lógica en el MID → invoca `/mid-oas` y aplica §1, §4 y §5; va a "Diseño técnico → MID".
+- Issue con interfaz en un MF → invoca `/pruebas-funcionales-oas` y aplica el Paso 0 y las reglas de los Pasos 4 y 5; va a "Pruebas E2E": qué criterios se automatizan (escenarios nuevos, con rol y `@lectura`/`@escritura`/`@simulado`), qué escenarios o page objects existentes se ajustan porque cambia la pantalla, los datos semilla, y si hay que crear `e2e/` en el MF. Lo que no se automatiza (p. ej. escrituras sin limpieza posible) va a "Fuera de alcance" con su motivo.
 - Si alguna regla de esas skills genera una decisión de negocio, pregúntala (formato de la Fase 2).
 
 Escribe el archivo (`estado: borrador`):
@@ -122,6 +125,11 @@ Escribe el archivo (`estado: borrador`):
 |---|---|---|---|---|
 ### MID (de /mid-oas)
 ### MF
+## Pruebas E2E
+(sólo MF con interfaz; de /pruebas-funcionales-oas)
+| Escenario | Nuevo / ajustar | Archivo (`e2e/tests/<modulo>/…`) | Rol | Etiquetas | Criterio que cubre |
+|---|---|---|---|---|---|
+Page objects nuevos o ajustados: … · Plan: `e2e/specs/<funcionalidad>.plan.md` · Datos semilla: … · ¿Crear `e2e/` en el MF?: sí/no
 ## Impacto
 (compartidos y cómo se aíslan; consumidores; permisos, estados, notificaciones; docs de .claude/docs; versión de API)
 ## Riesgos y preguntas abiertas
@@ -140,10 +148,11 @@ Completa "Plan de tareas":
 ### <repo> (en orden: CRUD → MID → MF)
 - [ ] T1 — <qué> · Archivos: <≤5> · Skill: /crud-oas + /endpoint-oas · Spec: <archivo .spec que agrega o actualiza> · Verificación: <build/test/prueba manual> · Depende de: —
 - [ ] T2 — …
+- [ ] Tn — Escenarios e2e (MF con interfaz): plan `e2e/specs/<funcionalidad>.plan.md`, page objects y `e2e/tests/<modulo>/…` nuevos, y ajuste de los existentes afectados · Skill: /pruebas-funcionales-oas · Verificación: `npx playwright test --grep @<modulo>` en verde dos veces · Depende de: las tareas de interfaz que cubre
 ### Commits
 - <cómo se agrupan: por tarea o por grupo lógico>
 ### Cierre
-- [ ] Pruebas funcionales de los flujos tocados con /pruebas-funcionales-oas (si la issue tiene interfaz)
+- [ ] Todos los escenarios e2e del módulo en verde (`npx playwright test --grep @<modulo>` desde `e2e/`; completas si cambió `e2e/core` o un page object compartido) e informe de /pruebas-funcionales-oas (si la issue tiene interfaz)
 - [ ] /seguridad-oas sobre el diff de cada repo (incluye la suite completa)
 - [ ] /commit-oas
 - [ ] Criterios de aceptación verificados
@@ -151,7 +160,7 @@ Completa "Plan de tareas":
 - [ ] /doc-issue-oas (si la issue lo exige)
 ```
 
-Reglas: cada tarea deja el sistema compilando y es verificable sola; ≤5 archivos (si no, divídela); dependencias explícitas; la skill que la gobierna; verificación concreta. Toda tarea que agrega o cambia comportamiento dice qué spec agrega o actualiza (`AGENTS.md` §8); si cambia un contrato, lista también los specs existentes que lo usan y habrá que ajustar.
+Reglas: cada tarea deja el sistema compilando y es verificable sola; ≤5 archivos (si no, divídela); dependencias explícitas; la skill que la gobierna; verificación concreta. Toda tarea que agrega o cambia comportamiento dice qué spec agrega o actualiza (`AGENTS.md` §8); si cambia un contrato, lista también los specs existentes que lo usan y habrá que ajustar. En un MF, "spec" incluye los escenarios e2e: si la issue agrega o cambia un flujo con interfaz, el plan lleva la tarea de escenarios (nuevos y existentes afectados, según "Pruebas E2E"); si el MF aún no tiene `e2e/`, esa tarea lo crea desde la plantilla (o se deja en "Fuera de alcance" con decisión del usuario).
 
 Pregunta con `AskUserQuestion` (mencionando el nombre del archivo): `Aprobar plan y empezar (Recomendado)` · `Aprobar plan, sólo dejar planificado` · `Ajustar plan`. Con cualquiera de las dos primeras: `estado: aprobada` + línea en Historial (el guardián valida esa respuesta). Si eligió sólo dejar planificado, termina aquí.
 

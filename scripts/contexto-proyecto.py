@@ -141,14 +141,22 @@ def cambios_traidos(root, desde):
     return commits, sorted(archivos)
 
 
+def dir_e2e(root):
+    """Carpeta donde está playwright.config.* (e2e/ autocontenido o la raíz del repo), o None."""
+    for d in ("e2e", ""):
+        if any(os.path.exists(os.path.join(root, d, f"playwright.config.{e}")) for e in ("ts", "js", "mjs")):
+            return d
+    return None
+
+
 def modulos_e2e(root, archivos):
-    """Módulos del MF (carpeta de src/app/modules o de e2e/) tocados, si el repo tiene Playwright."""
-    if not any(os.path.exists(os.path.join(root, f"playwright.config.{e}")) for e in ("ts", "js", "mjs")):
+    """Módulos del MF (carpeta de src/app/modules o de los escenarios e2e) tocados, si el repo tiene Playwright."""
+    if dir_e2e(root) is None:
         return []
     mods = set()
     for a in archivos:
-        m = re.match(r"(?:src/app/modules|e2e)/([a-z0-9][a-z0-9_-]*)/", a)
-        if m and m.group(1) not in ("specs", ".auth"):
+        m = re.match(r"(?:src/app/modules|e2e/tests|e2e)/([a-z0-9][a-z0-9_-]*)/", a)
+        if m and m.group(1) not in ("specs", "tests", "core", "pages", "node_modules"):
             mods.add(m.group(1))
     return sorted(mods)
 
@@ -225,10 +233,11 @@ def revisar(root, sesion):
     modulos = modulos_e2e(root, archivos) if commits is not None else []
     if modulos:
         grep = "|".join(f"@{m}" for m in modulos)
+        cd = f"cd {dir_e2e(root)} && " if dir_e2e(root) else ""
         pruebas += (
             f"\nLlegaron cambios de otras personas a módulos del MF con pruebas funcionales ({', '.join(modulos)}). "
             f"Sugiere al usuario, en una línea, correr sus escenarios si tiene el stack y la sesión: "
-            f"`PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep \"{grep}\"` (ver /pruebas-funcionales-oas). "
+            f"`{cd}PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep \"{grep}\"` (ver /pruebas-funcionales-oas). "
             "Es sólo una sugerencia: no los ejecutes sin que lo pida."
         )
     return (

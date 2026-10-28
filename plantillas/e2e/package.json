@@ -1,0 +1,20 @@
+{
+  "name": "<repo>-e2e",
+  "version": "1.0.0",
+  "description": "Pruebas funcionales E2E (Playwright) de <repo>",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:lectura": "playwright test --grep @lectura",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "20.17.30",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
