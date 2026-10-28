@@ -38,9 +38,11 @@ e2e/
   README.md                 # guía para el equipo y para funcionamiento
   core/                     # genérico, NO se modifica por proyecto (mejoras → plantilla del plugin)
     config.ts               # lee .env.e2e, roles con usuario, un proyecto por rol con grep @<rol>
-    global-setup.ts         # login WSO2 por rol → .auth/<rol>.json; reutiliza la sesión vigente
+    global-setup.ts         # sesión por rol al inicio: reutiliza si el core-mf la aceptaría, si no login nuevo
+    sesion.ts               # reglas de la sesión (vencimiento, inactividad) y renovación
+    login.mjs               # login WSO2 en un proceso de Node aparte (sin traza ni config de proyecto)
     navegador.ts            # CORS del core-mf de CloudFront y overlay del dev-server
-    fixtures.ts             # test extendido: bloqueo de escrituras en @lectura, errores, simularGet
+    fixtures.ts             # test extendido: vigilancia de la sesión, bloqueo de escrituras en @lectura, errores, simularGet
     base.page.ts            # clase base del POM (rutas, alertas SweetAlert, ancho de pantalla)
   pages/                    # page objects del proyecto (shell.page.ts = menú del root, ya incluido)
   specs/<funcionalidad>.plan.md   # planes de prueba (versionados)
@@ -80,11 +82,16 @@ Los MF se prueban dentro del **root** (`auditoria_plan_mejoramiento_root_mf` en 
 
 El login es OIDC implícito contra WSO2 (`autenticacion.portaloas.udistrital.edu.co`). El `core-mf` guarda `access_token`, `id_token`, `expires_at`, `menu` y `persona_id` en el `localStorage` del root.
 
-**Login automático por rol (preferido)** — lo hace `core/global-setup.ts` al inicio de cada corrida, con los usuarios de `E2E_<ROL>_USER/_PASS`: abre el root, pulsa **"Iniciar Sesión"**, llena `input[name=username], #usernameUserInput` y `input[name=password], #password`, envía, espera volver al root con las claves de sesión (`clavesSesion` en `playwright.config.ts`) y guarda `e2e/.auth/<rol>.json`. Si la sesión guardada sigue vigente (`expires_at` con margen), no repite el login.
+**Login automático por rol (preferido)** — `core/login.mjs`, en un proceso de Node aparte (fuera de Playwright Test: ni traza ni el `storageState` del proyecto alcanzan al navegador donde se escribe la contraseña), con los usuarios de `E2E_<ROL>_USER/_PASS`: abre el root, pulsa **"Iniciar Sesión"**, llena `input[name=username], #usernameUserInput` y `input[name=password], #password`, envía, espera volver al root con las claves de sesión (`clavesSesion` en `playwright.config.ts`) y guarda `e2e/.auth/<rol>.json`.
+
+**Ciclo de vida de la sesión** (todo en `core/`, sin intervención):
+- El core-mf cierra la sesión al cargar si el token venció (`expires_at`) o si pasaron **15 min 30 s sin actividad** (`core_last_activity`, que solo se actualiza con teclado o mouse). El `global-setup` reutiliza la sesión guardada solo si pasaría esas dos reglas con margen; si no, login nuevo. Validar abriendo el root no sirve: el core-mf no renueva la actividad al cargar.
+- Cada escenario que pasa guarda el estado del navegador (la app ya actualizó su actividad con los clics): la sesión sigue fresca para el siguiente.
+- Si a mitad de corrida la página navega hacia WSO2 (logout o login, aunque sea solo una redirección `/oidc/logout`), el fixture `vigilarSesion` cierra la página (falla rápido), renueva la sesión con `login.mjs`, deja la marca `.auth/<rol>.renovada` y el escenario se reintenta **una vez** (`retries: 1` por proyecto). Sin la marca, el reintento falla de inmediato: una falla real nunca se repite. Las llamadas a las APIs por el gateway (mismo host) no cuentan: solo las navegaciones.
 
 Reglas:
 1. **Los valores de `.env.e2e` nunca se leen, muestran ni copian** (ni en el chat, ni en logs, ni en el informe). Nunca los pases por `playwright-cli fill` ni los escribas en un spec.
-2. Si el login falla, **no reintentes**: WSO2 bloquea la cuenta o pide captcha tras varios intentos. El setup se detiene con el rol que falló; pide al usuario revisar la VPN, la contraseña o el estado de la cuenta.
+2. Si WSO2 **rechaza las credenciales** (`authFailure`, salida 2 de `login.mjs`), **no se reintenta**: la cuenta se bloquea o pide captcha tras varios intentos. La corrida se detiene con el rol; pide al usuario revisar la contraseña o el estado de la cuenta. Solo una falla transitoria (red, tiempo agotado) se reintenta, una vez. No agregues reintentos de login en otro lugar.
 3. Solo cuentas de prueba **dedicadas** del ambiente de pruebas, con el rol mínimo que necesita el escenario. Nunca cuentas personales ni de producción.
 4. `e2e/.auth/*.json` contiene tokens: no lo leas completo, no lo pegues en el chat, no lo commitees (`git check-ignore e2e/.auth/<rol>.json e2e/.env.e2e`).
 5. No alteres `menu`, roles ni tokens en `localStorage` para simular otro rol: eso no prueba la aplicación y salta el control de acceso. Cada rol, su usuario de prueba.
@@ -97,7 +104,7 @@ playwright-cli open --headed http://localhost:4200
 playwright-cli state-save e2e/.auth/<rol>.json
 playwright-cli close
 ```
-Los tokens caducan: si un escenario termina en la página de autenticación, la sesión venció (`rm -rf e2e/.auth` y volver a correr).
+Con login manual no hay renovación automática: si el escenario termina en WSO2, el usuario repite el login manual.
 
 ## Paso 4 — Plan, page objects y escenarios
 

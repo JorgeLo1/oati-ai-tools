@@ -43,7 +43,16 @@ npx playwright test <archivo> --debug      # paso a paso con el inspector
 npm run report                             # reporte HTML de la última corrida, con capturas
 ```
 
-El login se hace una vez por rol al inicio (`core/global-setup.ts`). La sesión se guarda en `e2e/.auth/` (no versionado) y se reutiliza mientras siga vigente.
+### Sesión de los usuarios de prueba (automático)
+
+El login se hace por rol al inicio y la sesión se guarda en `e2e/.auth/` (no versionado). El marco la cuida solo:
+
+- **Al empezar**, reutiliza la sesión guardada solo si el sistema la aceptaría: el token no ha vencido y no han pasado 15 minutos sin actividad (el core-mf cierra la sesión por inactividad). Si no, hace un login nuevo.
+- **Durante la corrida**, cada escenario que pasa guarda la sesión, que así sigue activa para el siguiente.
+- **Si la sesión se cierra a mitad de corrida** (por ejemplo, alguien inició sesión con la misma cuenta en otro lado), el escenario se detiene de inmediato, se hace un login nuevo y el escenario se repite **una vez** (en el reporte aparece como *flaky*). Un escenario que falla por otra causa **no** se repite.
+- **Si el usuario o la contraseña son incorrectos**, no se reintenta (WSO2 bloquea la cuenta tras varios intentos): la corrida se detiene con "login del rol … rechazado".
+
+El login corre en un proceso aparte (`core/login.mjs`), sin trazas: la contraseña nunca queda en el reporte. Mientras corren las pruebas, no inicies sesión con las cuentas de prueba en tu navegador.
 
 **WSL:** `--ui`, `--headed` y `--debug` abren ventanas y necesitan la interfaz gráfica de WSL (`guiApplications=true` en `C:\Users\<usuario>\.wslconfig` y `wsl --shutdown`; `ls /tmp/.X11-unix/` debe mostrar `X0`). Sin ella: `npx playwright test --ui-port=9323` y abrir `http://localhost:9323` en el navegador de Windows.
 
@@ -55,7 +64,7 @@ El login se hace una vez por rol al inicio (`core/global-setup.ts`). La sesión 
 | `e2e/playwright-report/` | Reporte HTML de la última corrida: pasos, capturas adjuntas, errores (`npm run report`) |
 | `e2e/test-results/` | Trazas y capturas de los escenarios que fallaron (`npx playwright show-trace test-results/<carpeta>/trace.zip`) |
 
-Solo se conserva la última corrida; para guardar evidencia, copia `playwright-report/`. Si el login falla, **no repetir**: WSO2 bloquea la cuenta tras varios intentos.
+Solo se conserva la última corrida; para guardar evidencia, copia `playwright-report/`. 
 
 > **Cuidado al compartir resultados.** Las trazas, el reporte y las capturas contienen la sesión de la cuenta de prueba (token en cabeceras y `localStorage`) y datos reales del ambiente de pruebas. Compártelos solo dentro del equipo y nunca los publiques en sitios abiertos.
 
@@ -65,9 +74,11 @@ Solo se conserva la última corrida; para guardar evidencia, copia `playwright-r
 e2e/
   core/                     ← genérico: igual en todos los proyectos (plantilla del plugin oas)
     config.ts               variables, roles con usuario, un proyecto de Playwright por rol
-    global-setup.ts         login institucional (WSO2) por rol, sin traza ni reintentos
+    global-setup.ts         sesión por rol al inicio: reutiliza si sigue válida, si no login nuevo
+    sesion.ts               reglas de la sesión (vencimiento e inactividad) y renovación
+    login.mjs               login institucional (WSO2) en un proceso aparte, sin trazas
     navegador.ts            ajustes del navegador para el root/core-mf (CORS, overlay)
-    fixtures.ts             test extendido: bloqueo de escrituras en @lectura, errores, simularGet
+    fixtures.ts             test extendido: vigilancia de la sesión, bloqueo de escrituras en @lectura, errores, simularGet
     base.page.ts            clase base de los page objects
   pages/                    ← propio del proyecto: un page object por pantalla
   specs/<funcionalidad>.plan.md        plan de pruebas (qué se prueba y con qué datos)

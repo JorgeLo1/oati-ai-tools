@@ -49,11 +49,15 @@ export function rolesConUsuario(roles: readonly string[]): string[] {
 /**
  * Un proyecto por rol con usuario. Cada proyecto corre solo los escenarios etiquetados con su rol
  * (`@auditor`), con la sesión guardada por el global-setup.
+ *
+ * `retries: 1` existe solo para la sesión cerrada a mitad de corrida: el fixture vigilarSesion hace
+ * que un reintento por cualquier otra causa falle de inmediato (ver core/fixtures.ts).
  */
 export function proyectosPorRol(roles: readonly string[]): Project[] {
   return rolesConUsuario(roles).map((rol) => ({
     name: rol,
     grep: new RegExp(`@${rol}(?![\\w-])`),
+    retries: 1,
     use: { storageState: rutaSesion(rol) },
   }));
 }

@@ -2,6 +2,14 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.7.1 · 2026-10-28
+
+- Plantilla e2e (`plantillas/e2e/core/`) y `pruebas-funcionales-oas`: la sesión de los usuarios de prueba se cuida sola. Corrige la falla en que una sesión guardada vigente por fecha era rechazada por el core-mf (cierre por 15 min de inactividad o desde WSO2) y llevaba a "Petición Inválida".
+  - `core/sesion.ts`: reutiliza la sesión solo si pasaría las reglas del core-mf (`expires_at` y `core_last_activity`, con margen).
+  - `core/login.mjs`: el login corre en un proceso de Node aparte, sin traza ni `storageState` del proyecto. Con credenciales rechazadas no reintenta; con una falla transitoria reintenta una vez.
+  - `core/fixtures.ts` (`vigilarSesion`): si la página navega a WSO2 a mitad de corrida, falla rápido, renueva la sesión y reintenta el escenario una vez (`retries: 1`, condicionado a la marca `.auth/<rol>.renovada`; una falla real no se repite). Cada escenario que pasa guarda el estado para que la sesión siga fresca.
+  - Validado en `plan_anual_auditoria_mf` con sesiones viejas, logout real a mitad de corrida y usuario inexistente.
+
 ## 1.7.0 · 2026-10-27
 
 Marco de pruebas E2E validado en `plan_anual_auditoria_mf` (udistrital/sisifo_documentacion#939).
