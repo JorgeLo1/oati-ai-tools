@@ -37,14 +37,14 @@ e2e/
   .env.e2e.example          # nombres de las variables (versionado)
   README.md                 # guía para el equipo y para funcionamiento
   core/                     # genérico, NO se modifica por proyecto (mejoras → plantilla del plugin)
-    config.ts               # lee .env.e2e, roles con usuario, un proyecto por rol con grep @<rol>
+    config.ts               # lee .env.e2e, roles con usuario, un proyecto por rol con grep @<rol>; seguro de escritura (@escritura solo con --grep @escritura o E2E_ESCRITURA=1)
     global-setup.ts         # sesión por rol al inicio: reutiliza si el core-mf la aceptaría, si no login nuevo
     sesion.ts               # reglas de la sesión (vencimiento, inactividad) y renovación
     login.mjs               # login WSO2 en un proceso de Node aparte (sin traza ni config de proyecto)
     navegador.ts            # CORS del core-mf de CloudFront y overlay del dev-server
-    fixtures.ts             # test extendido: vigilancia de la sesión, bloqueo de escrituras en @lectura, errores, simularGet
+    fixtures.ts             # test extendido: vigilancia de la sesión, bloqueo de escrituras en @lectura, errores, simularGet, limpieza (al final aunque falle) y comoRol (sesión de otro rol en el mismo escenario)
     base.page.ts            # clase base del POM (rutas, alertas SweetAlert, ancho de pantalla)
-  pages/                    # page objects del proyecto (shell.page.ts = menú del root, ya incluido)
+  pages/                    # page objects del proyecto (incluidos: shell.page.ts = menú del root; alertas.ts = resolverAlertas para flujos que escriben)
   specs/<funcionalidad>.plan.md   # planes de prueba (versionados)
   tests/<modulo>/<escenario>.spec.ts   # un escenario por archivo
   .env.e2e · .auth/ · playwright-report/ · test-results/ · node_modules/   # NUNCA se versionan
@@ -112,7 +112,10 @@ Con login manual no hay renovación automática: si el escenario termina en WSO2
 2. **Explora antes de fijar selectores**: menú y pantallas reales por rol (snapshot de `playwright-cli` o un script de exploración en el scratchpad, con escrituras bloqueadas). Así salen las opciones, títulos y datos reales.
 3. **Page objects** en `e2e/pages/<pantalla>.page.ts`, extendiendo `BasePage`: los locators y las acciones viven aquí, con nombres de negocio (`registro.abrirFicha()`). Los escenarios **no** usan selectores.
    - Locators por rol y nombre accesible (`getByRole`, `getByLabel`). Donde no haya nombre accesible, el selector CSS queda **dentro** del page object; si es frágil, propón `aria-label` o `data-testid` en el componente como cambio del MF, dentro del alcance aprobado.
-   - Material: el `mat-select` vacío lo tapa su etiqueta (se hace clic en el `mat-form-field`); las opciones deshabilitadas (`--Seleccionar--`) no se eligen.
+   - Material: el `mat-select` vacío lo tapa su etiqueta (se hace clic en el `mat-form-field`); las opciones deshabilitadas (`--Seleccionar--`) no se eligen. El touch-target del paginador tapa su selector (clic en `.mat-mdc-paginator-touch-target`). La caja "Buscar…" de `ngx-mat-select-search` se reporta deshabilitada: escribe con el teclado.
+   - **`aria-hidden` en el `<main>` del root**: cuando un `MatDialog` se cierra mientras hay una alerta SweetAlert2 abierta, el contenedor queda con `aria-hidden="true"` y `getByRole` deja de encontrar botones y filas de la pantalla. En esas pantallas, los locators van por CSS o por texto **dentro del page object**, con un comentario que lo explique. Repórtalo como hallazgo de accesibilidad (la corrección es abrir la alerta en `afterClosed()`).
+   - **Alertas**: en los flujos que escriben usa `resolverAlertas` (`pages/alertas.ts`). Confirma las preguntas, espera las alertas de carga, falla con el texto si es un error, vuelve a leer si la aplicación reemplaza la alerta antes del clic y, con `hasta`, sigue avisos encadenados. En SweetAlert2 v11 la clase de error está en el popup (`.swal2-popup.swal2-icon-error`), no en un hijo.
+   - **Contenido que llega tarde**: diálogos con pestañas o documentos (Ver Documentos, historiales) muestran primero lo fijo (botón "Regresar", pestañas obligatorias) y el resto cuando termina la descarga. Espera lo que vas a verificar (`expect.poll` sobre las pestañas, `waitForResponse` de la descarga), nunca el primer elemento estático: leer antes produce **falsos hallazgos**.
 4. **Escenarios** en `e2e/tests/<modulo>/<escenario>.spec.ts`, **uno por archivo**, importando `test` y `expect` de `../../core/fixtures`, con cabecera `// spec: e2e/specs/<funcionalidad>.plan.md` y etiquetas:
    ```ts
    test('<escenario>', { tag: ['@plan-mejoramiento', '@auditor', '@lectura'] }, async ({ page, escriturasBloqueadas }, testInfo) => {
@@ -130,6 +133,16 @@ Con login manual no hay renovación automática: si el escenario termina en WSO2
 - Cada escenario lleva **`@lectura`** (solo consulta) o **`@escritura`** (crea, edita o cambia estados). En `@lectura`, `core/fixtures.ts` **aborta** cualquier `POST/PUT/PATCH/DELETE` fuera del root y lo adjunta al reporte (`escriturasBloqueadas`): una corrida de lectura nunca modifica el ambiente. Conviene un escenario que lo demuestre (intentar una escritura y verificar que se bloqueó y que el dato no cambió).
 - En el ambiente de pruebas compartido (funcionamiento, Drone) corren solo los `@lectura`. Un `@escritura` corre contra el CRUD local, o en compartido solo con aprobación explícita del usuario para ese escenario y limpiando lo que crea. Contra producción, nunca.
 - Lo que crea un `@escritura` lleva un marcador único (`E2E-<AAAAMMDD-HHmm>`) y se limpia al final (borrado lógico vía API en un fixture). Si no se puede limpiar, dilo en el informe.
+- **Seguro de escritura**: `core/config.ts` excluye los `@escritura` salvo que se pidan con `--grep @escritura` (`npm run test:escritura`, o `npx playwright test <archivo> --grep @escritura`) o `E2E_ESCRITURA=1`. `npm test` nunca escribe. El guardián pide confirmación antes de correr escenarios de escritura.
+- **Patrón `@escritura`** (referencia: `tests/programacion/` de `plan_anual_auditoria_mf`):
+  1. **Datos dedicados**: una entidad o vigencia reservada para E2E. Si otra persona la ocupa, el escenario **falla sin tocarla**.
+  2. **Pre-limpieza** al empezar: borra solo lo que es de E2E, por marcador o porque lo creó la misma cuenta y quedó sin marcador (corrida interrumpida). Lo ajeno no se toca.
+  3. **`limpieza.registrar(descripción, fn)`** apenas se crea algo, con su `_id` (no al final). Corre aunque el escenario falle, en orden inverso, y queda en el reporte.
+  4. **Token de la API de limpieza**: el de la página del rol (`localStorage.access_token`), guardando el último leído. Si el root cierra la sesión a mitad del escenario, la limpieza sigue funcionando (el token dura ~60 min).
+  5. **Correos**: interceptados (responder OK y adjuntar el payload). Firma y gestor documental reales si el usuario lo decide.
+  6. **Después de cada corrida, verifica por API** que no quedó nada activo (script de solo lectura) y reporta el resultado. Lo que no se pudo borrar (documentos en Nuxeo, registros sin borrado lógico) se informa.
+  7. **De a un `@escritura` a la vez**: comparten datos. Si detienes una corrida a mitad, la limpieza no corre: verifica y limpia a mano (con confirmación).
+- **Ciclos entre roles** (aprobaciones): un solo escenario con un `test.step` por rol, usando `comoRol('<rol>')`, que abre otra página con la sesión de ese rol. Los pasos comunes (crear, enviar, aprobar, rechazar) van en un helper del módulo (`tests/<modulo>/ciclo.ts`) que reutilizan varios escenarios, con una página por rol.
 - **`@simulado`**: para un estado de pantalla que no existe en los datos (p. ej. "sin calificaciones"), `simularGet('<patrón>', (data) => …)` reescribe el `Data` de la respuesta GET sin escribir en el backend. No prueba el backend: el escenario lo dice con la etiqueta.
 - Los escenarios no dependen del orden ni de datos creados por otro. Los datos semilla (vigencia, entidad) van en el plan y se pueden cambiar por variable (`E2E_<DATO>`), con un mensaje claro si no existen.
 
@@ -138,9 +151,10 @@ Con login manual no hay renovación automática: si el escenario termina en WSO2
 Desde `e2e/` (con el stack arriba):
 
 ```bash
-npm test                                   # todo
-npx playwright test --grep @<modulo>       # antes del PR: TODOS los escenarios del módulo
+npm test                                   # todo, salvo @escritura
+npx playwright test --grep @<modulo>       # antes del PR: TODOS los escenarios del módulo (sin @escritura)
 npm run test:lectura                       # solo lectura
+npm run test:escritura                     # solo con autorización, de a uno, verificando la limpieza
 npx playwright test --ui                   # modo UI: escenario por escenario, pasos, Before/After, red
 npx playwright test --headed               # el navegador haciendo el flujo
 npx playwright test <archivo> --debug      # paso a paso
@@ -149,9 +163,23 @@ npm run report                             # reporte HTML de la última corrida
 
 - **WSL**: `--ui`, `--headed` y `--debug` necesitan la interfaz gráfica (`guiApplications=true` en `C:\Users\<usuario>\.wslconfig` + `wsl --shutdown`; `ls /tmp/.X11-unix/` muestra `X0`). Sin ella, `npx playwright test --ui-port=9323` y abrir `http://localhost:9323` en el navegador de Windows (se ven los pasos, no en vivo). No cambies el `.wslconfig` sin confirmación: reiniciar WSL apaga todo el stack.
 - **Resultados**: consola (✓/✘), `e2e/playwright-report/` (pasos, capturas adjuntas, errores; solo la última corrida) y `e2e/test-results/` (traza `trace.zip` de los que fallan: `npx playwright show-trace …`).
+- **Corridas largas** (ciclos con escritura, suite completa): en segundo plano, una a la vez, con `--reporter=line` a un archivo y un aviso por resultado. Antes de relanzar tras un reinicio, comprueba que el stack responde (`curl` a root y MF).
 - Estable = la suite en verde **dos veces seguidas**, y una falla provocada sale con código distinto de 0.
-- Fallos: flujo de reparación de `playwright-cli` (`references/test-generation.md` §3), de a uno.
-- Si el MF no hace lo que dice el criterio: **para y pregunta** si es un bug o si el criterio cambió (no ajustes el test para que pase).
+- Fallos: flujo de reparación de `playwright-cli` (`references/test-generation.md` §3), de a uno. Para saber qué respondió la API, revisa la red de la traza (`trace.zip` → `*.network`, cuerpos en `resources/`).
+- **Clasifica cada falla antes de tocar nada**:
+  - **Red local**: `net::ERR_NETWORK_CHANGED`, `ERR_INTERNET_DISCONNECTED`. No repares la prueba: avisa al usuario. Registra los cambios de red mientras corre (`ip -timestamp monitor link address route`).
+  - **Ambiente**: 502/503/504 del gateway, APIs lentas. No agregues reintentos que lo oculten; repite solo ese escenario y repórtalo si sigue.
+  - **Test**: espera, locator o dato del propio escenario. Se corrige.
+  - **Aplicación**: el MF no hace lo que dice el criterio.
+- **Antes de reportar un hallazgo de la aplicación, valida que no es del test**:
+  1. Revisa el código del MF, y del CRUD/MID si aplica.
+  2. Reprodúcelo fuera del escenario: un escenario temporal `@lectura` con esperas largas (luego bórralo), o lecturas por API.
+  3. Busca el mismo efecto en datos reales.
+  4. Clasifícalo: defecto real, error del test o no concluyente.
+
+  Un dato que llega tarde (sección del Paso 4) es la causa típica de un falso hallazgo.
+- Si el MF no hace lo que dice el criterio (validado): **para y pregunta** si es un bug o si el criterio cambió (no ajustes el test para que pase). Las opciones típicas son: verificar por API y reportarlo, sacar el paso y reportarlo, o dejarlo en rojo.
+- **WSL con VPN**: si aparece `net::ERR_NETWORK_CHANGED` en ráfagas (sobre todo en subidas o descargas de archivos), revisa `networkingMode` en `.wslconfig`. Con `mirrored` y una VPN como GlobalProtect, Hyper-V reconecta la NIC virtual de WSL cada pocos segundos (evento "Conexión NIC"), sin que Windows muestre nada. La solución es `networkingMode=NAT`; el cambio lo hace el usuario, porque reinicia WSL, apaga el stack y borra `/tmp`.
 - Nunca `test.skip`/`test.fixme` sin decisión del usuario.
 
 ## Trabajo en equipo en el mismo módulo
@@ -180,7 +208,8 @@ npm run report                             # reporte HTML de la última corrida
 
   ## Escenarios existentes ajustados
   ## Fallos y decisiones
-  ## Datos creados y limpieza (o "solo lectura: 0 escrituras")
+  ## Datos creados y limpieza (o "solo lectura: 0 escrituras"; con @escritura, la verificación por API tras cada corrida)
+  ## Hallazgos (clasificados: defecto real / error del test / no concluyente, con evidencia)
   ## Pendientes (sesión vencida, criterios no automatizables, por confirmar)
   ```
 - Ese informe lo usan `/doc-issue-oas` (sección "Pruebas realizadas") y `/seguridad-oas` (ítem "Pruebas funcionales realizadas").

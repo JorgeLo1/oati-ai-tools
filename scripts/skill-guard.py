@@ -23,6 +23,9 @@ Commits: exigen /commit-oas y, si incluyen código, /seguridad-oas. Stop: tras u
 Configuración del sistema (plugin oas-ai-tools, ~/.claude/{skills,agents,scripts,plugins}, settings, ~/.config/oas-ai-tools,
 <udistrital>/CLAUDE.md y AGENTS.md, archivos -off): editar pide confirmación.
 Lectura de .env: pide confirmación (herramienta Read o Bash).
+Pruebas E2E: leer e2e/.auth/ (sesiones con tokens) pide confirmación y escribirlo con las herramientas de edición se
+bloquea; editar <repo>/e2e/core/ pide confirmación (núcleo idéntico a la plantilla del plugin); correr Playwright con
+escenarios @escritura (--grep @escritura, test:escritura, E2E_ESCRITURA=1) pide confirmación.
 
 Desactivar en un repo: el USUARIO crea <repo>/.claude/.skill-guard-off
 """
@@ -45,6 +48,8 @@ CONFIG_OAS = os.path.realpath(oas_config.CONFIG_DIR)
 EXT_CODIGO = (".ts", ".js", ".mjs", ".cjs", ".go", ".html", ".scss", ".css", ".json", ".sql", ".yml", ".yaml", ".conf", ".py", ".sh")
 RE_RUTA = re.compile(r"@(Controller|Get|Post|Put|Patch|Delete|All)\s*\(|//\s*@router\b")
 RE_ENV = re.compile(r"^\.env(\..+)?$")
+SESIONES_E2E = "/e2e/.auth/"  # sesiones (tokens) de los usuarios de prueba que guarda el marco E2E
+NUCLEO_E2E = "/e2e/core/"     # núcleo E2E: idéntico a plantillas/e2e/core/ del plugin
 RE_COMMIT_OK = re.compile(r"^\[[^\]\n]+ [0-9a-f]{7,40}\]", re.MULTILINE)  # salida de un commit real
 LOCKFILES = ("pnpm-lock.yaml", "package-lock.json", "yarn.lock", "go.sum")
 ESTADOS_ACTIVOS = ("aprobada", "en-implementacion", "implementada")
@@ -233,6 +238,9 @@ def revisar_destino(path, datos, ctx, nuevo=None, viejo=None, via_bash=False):
         return "deny", f"[skill-guard] {base} sólo se modifica con el gestor de paquetes (pnpm/npm/go), no a mano."
     if "/node_modules/" in path or "/dist/" in path:
         return "deny", "[skill-guard] node_modules/ y dist/ son generados: no se editan."
+    if SESIONES_E2E in path and not via_bash:  # por terminal se permite borrarlas para forzar un login nuevo
+        return "deny", ("[skill-guard] e2e/.auth/ guarda las sesiones de los usuarios de prueba (tokens): las genera "
+                        "el marco E2E y no se editan.")
 
     if not repo or not (path.endswith(EXT_CODIGO) or base == "__xargs__"):
         return None, None
@@ -260,6 +268,10 @@ def revisar_destino(path, datos, ctx, nuevo=None, viejo=None, via_bash=False):
             and not uso_skill(ctx["eventos"], "endpoint-oas"):
         return "deny", ("[skill-guard] El cambio agrega o modifica rutas HTTP sin haber pasado por /endpoint-oas. "
                         "Invoca la skill `endpoint-oas`, valida nombre/verbo/status/Swagger/consumidores y reintenta.")
+    if NUCLEO_E2E in path:
+        return "ask", (f"[skill-guard] {path} es parte de e2e/core/, que debe ser idéntico a plantillas/e2e/core/ del "
+                       "plugin oas en todos los MF. Si es una mejora genérica, aplícala también en la plantilla "
+                       "(y `diff -r` vacío); si es del proyecto, va en pages/ o tests/. ¿Confirmas el cambio?")
     return None, None
 
 
@@ -332,6 +344,18 @@ def pre_read(datos):
     base = os.path.basename(path)
     if path and bajo(path, RAIZ) and RE_ENV.match(base) and not base.endswith(".example"):
         emitir("ask", f"[skill-guard] {base} puede contener secretos; leerlo los deja en la conversación. ¿Permitir?")
+    elif path and bajo(path, RAIZ) and SESIONES_E2E in os.path.realpath(path):
+        emitir("ask", f"[skill-guard] {base} es la sesión guardada de un usuario de prueba (tokens): leerla la deja en "
+                      "la conversación. Para usar el token por API, extráelo en un script sin imprimirlo. ¿Permitir?")
+
+
+def corre_escritura_e2e(seg):
+    """Playwright con escenarios @escritura pedidos de forma explícita (el núcleo E2E los excluye si no)."""
+    toks = seg.tokens
+    script = any(t == "test:escritura" for t in toks) and seg.prog in ("npm", "pnpm", "yarn")
+    playwright = "playwright" in toks and "test" in toks
+    pide = any("@escritura" in t for t in toks) or "E2E_ESCRITURA=1" in toks
+    return script or (playwright and pide)
 
 
 def pre_bash(datos):
@@ -368,6 +392,13 @@ def pre_bash(datos):
             b = os.path.basename(p)
             if bajo(p, RAIZ) and RE_ENV.match(b) and not b.endswith(".example") and p not in destinos:
                 considerar(("ask", f"[skill-guard] El comando lee {b}, que puede contener secretos. ¿Permitir?"))
+            elif bajo(p, RAIZ) and SESIONES_E2E in p and p not in destinos:
+                considerar(("ask", f"[skill-guard] El comando usa {b}, la sesión guardada de un usuario de prueba "
+                                   "(tokens). No imprimas su contenido. ¿Permitir?"))
+        if bajo(seg.cwd, RAIZ) and corre_escritura_e2e(seg):
+            considerar(("ask", "[skill-guard] El comando corre escenarios E2E @escritura: crean y cambian datos en el "
+                               "ambiente de pruebas compartido. Córrelo solo si el usuario autorizó esta corrida, de a "
+                               "uno, y verifica la limpieza por API al terminar. ¿Permitir?"))
     emitir(*peor)
 
 

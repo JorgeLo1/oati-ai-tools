@@ -5,6 +5,7 @@
  * Convención común a todos los proyectos udistrital:
  *   E2E_BASE_URL                 URL del root que compone los MF
  *   E2E_<ROL>_USER / _PASS       usuario de prueba dedicado por rol (jefe-dependencia → JEFE_DEPENDENCIA)
+ *   E2E_ESCRITURA=1              permite correr escenarios @escritura (o pasar --grep @escritura)
  */
 import path from 'node:path';
 import type { Project } from '@playwright/test';
@@ -20,6 +21,15 @@ try {
 }
 
 export const BASE_URL = (process.env['E2E_BASE_URL'] || 'http://localhost:4200').replace(/\/$/, '');
+
+/**
+ * Los escenarios @escritura cambian datos de un ambiente compartido: solo corren si se piden de forma
+ * explícita, con `--grep @escritura` (npm run test:escritura) o con E2E_ESCRITURA=1. Así `npm test` o
+ * `npx playwright test <archivo>` nunca escriben por descuido. La marca pasa por variable de entorno
+ * para que los workers vean la misma configuración que el proceso principal.
+ */
+if (process.argv.some((arg) => arg.includes('@escritura'))) process.env['E2E_ESCRITURA'] = '1';
+export const ESCRITURA_PERMITIDA = process.env['E2E_ESCRITURA'] === '1';
 
 export function prefijoRol(rol: string): string {
   return `E2E_${rol.toUpperCase().replace(/-/g, '_')}`;
@@ -48,7 +58,8 @@ export function rolesConUsuario(roles: readonly string[]): string[] {
 
 /**
  * Un proyecto por rol con usuario. Cada proyecto corre solo los escenarios etiquetados con su rol
- * (`@auditor`), con la sesión guardada por el global-setup.
+ * (`@auditor`), con la sesión guardada por el global-setup, y sin los @escritura salvo que se pidan
+ * (ESCRITURA_PERMITIDA).
  *
  * `retries: 1` existe solo para la sesión cerrada a mitad de corrida: el fixture vigilarSesion hace
  * que un reintento por cualquier otra causa falle de inmediato (ver core/fixtures.ts).
@@ -57,6 +68,7 @@ export function proyectosPorRol(roles: readonly string[]): Project[] {
   return rolesConUsuario(roles).map((rol) => ({
     name: rol,
     grep: new RegExp(`@${rol}(?![\\w-])`),
+    ...(ESCRITURA_PERMITIDA ? {} : { grepInvert: /@escritura(?![\w-])/ }),
     retries: 1,
     use: { storageState: rutaSesion(rol) },
   }));

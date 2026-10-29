@@ -2,6 +2,31 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.8.0 · 2026-10-29
+
+Lo aprendido en los escenarios de escritura de Programación de `plan_anual_auditoria_mf` (udistrital/sisifo_documentacion#939, etapa 2).
+
+- **Plantilla e2e, `core/`** (idéntico al de la implementación de referencia):
+  - Fixture `limpieza`: `limpieza.registrar(descripción, fn)` corre al final del escenario aunque falle, en orden inverso, deja en el reporte lo limpiado y falla si algo no se pudo limpiar.
+  - Fixture `comoRol(rol)`: abre una página con la sesión de otro rol, para que un ciclo entre roles (aprobaciones) sea un solo escenario. Renueva la sesión del otro rol si quedó inactiva.
+  - Fixture `bloquearEscrituras`, extraído: lo comparten los escenarios `@lectura` y `comoRol`.
+  - **Seguro de escritura** en `core/config.ts`: los `@escritura` solo corren con `--grep @escritura` (`npm run test:escritura`) o `E2E_ESCRITURA=1`. Antes, `npm test` los corría y escribía en el ambiente compartido.
+- **Plantilla e2e, `pages/`**:
+  - Nuevo `alertas.ts` (`resolverAlertas`): confirma preguntas, espera las alertas de carga, falla con el texto si es un error, vuelve a leer si la aplicación reemplaza la alerta y, con `hasta`, sigue avisos encadenados.
+  - `shell.page.ts` detecta una alerta de error de SweetAlert2 v11 antes de usar el menú. La clase `swal2-icon-error` está en el popup, no en un hijo, y la detección anterior nunca encontraba nada.
+  - `package.json`: script `test:escritura`. README: el seguro de escritura.
+- **`pruebas-funcionales-oas`**:
+  - Patrón `@escritura`: datos dedicados, pre-limpieza solo de lo propio (marcador o misma cuenta), `limpieza.registrar` al crear, token de respaldo para limpiar aunque se cierre la sesión, verificación por API tras cada corrida y de a uno.
+  - Ciclos entre roles con `comoRol` y un helper `tests/<modulo>/ciclo.ts`.
+  - Trampas: `aria-hidden` en el `<main>` del root tras `MatDialog` y SweetAlert2 (locators por CSS en el page object), contenido que llega tarde (esperar lo que se verifica, no el primer elemento estático) y detalles de Material.
+  - **Clasificar cada falla** (red local, ambiente, test, aplicación) y **validar un hallazgo antes de reportarlo**: reproducirlo fuera del escenario y clasificarlo como defecto real, error del test o no concluyente.
+  - WSL con VPN: `ERR_NETWORK_CHANGED` en ráfagas con `networkingMode=mirrored` y GlobalProtect; se resuelve con NAT y se diagnostica con `ip -timestamp monitor`. Además: corridas largas en segundo plano y no reintentar los 5xx.
+  - El informe agrega una sección de hallazgos clasificados.
+- **Guardianes (`skill-guard`, contratos R4 y R14 nueva, 11 casos nuevos: 104/104)**:
+  - Leer o usar un archivo de `e2e/.auth/` (sesiones con tokens) pide confirmación; escribirlo con las herramientas de edición se bloquea. Borrarlo por terminal, para forzar un login nuevo, sigue permitido.
+  - Editar `<MF>/e2e/core/` pide confirmación y recuerda que el núcleo debe quedar idéntico a la plantilla.
+  - Correr Playwright pidiendo `@escritura` pide confirmación: escribe en un ambiente compartido.
+
 ## 1.7.1 · 2026-10-28
 
 - Plantilla e2e (`plantillas/e2e/core/`) y `pruebas-funcionales-oas`: la sesión de los usuarios de prueba se cuida sola. Corrige la falla en que una sesión guardada vigente por fecha era rechazada por el core-mf (cierre por 15 min de inactividad o desde WSO2) y llevaba a "Petición Inválida".

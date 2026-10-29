@@ -6,6 +6,7 @@
   "scripts": {
     "test": "playwright test",
     "test:lectura": "playwright test --grep @lectura",
+    "test:escritura": "playwright test --grep @escritura",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit"
   },

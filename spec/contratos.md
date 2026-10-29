@@ -32,6 +32,7 @@ En repos `crud`/`mid`, si el contenido nuevo tiene más decoradores de ruta que 
 - Escribir/editar `.env` o `.env.*` (salvo `.example`) → **bloquear** (la IA dice qué variable agregar; la pone el usuario).
 - Editar a mano `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, `go.sum`, o cualquier cosa bajo `node_modules/` o `dist/` → **bloquear**.
 - Leer un `.env*` (salvo `.example`), con la herramienta de lectura o por terminal → **confirmar**.
+- Leer o usar como argumento un archivo de `e2e/.auth/` (sesiones de los usuarios de prueba, con tokens) → **confirmar**. Escribirlo o editarlo con las herramientas de edición → **bloquear** (lo genera el marco E2E; por terminal se puede borrar para forzar un login nuevo).
 
 ### R5 — Configuración de las herramientas
 Editar, crear o borrar: skills/agentes/scripts/plugins/ajustes de la herramienta de IA, los archivos de estas herramientas, `~/.config/oas-ai-tools/`, `<UDISTRITAL>/AGENTS.md`, `<UDISTRITAL>/CLAUDE.md`, o un archivo `.skill-guard-off`/`.contexto-off` → **confirmar**. (La IA no puede desactivar ni debilitar sus propios controles sin que el usuario lo vea.)
@@ -73,6 +74,10 @@ Si el **mensaje** del commit (`-m`, `--message`, `-F`, heredocs del comando) con
 
 ### R13 — Documentar al cerrar
 Al terminar un turno de la IA dentro de `<UDISTRITAL>`, si hubo un commit real **en un repo udistrital** en la sesión (se determina el repo por el directorio donde se ejecutó el comando, sus `cd` y `git -C`; un commit en un repo fuera de `<UDISTRITAL>` no cuenta) y `documentar-cambios` no se usó **después** de ese commit → **bloquear una sola vez por commit** con la indicación: "si la tarea quedó cerrada, invoca documentar-cambios; si continúa, dilo en una línea y termina". Si la herramienta no permite forzar la continuación, convertirlo en un recordatorio visible.
+
+### R14 — Pruebas E2E
+- Editar un archivo bajo `<repo>/e2e/core/` de un repo udistrital, si ningún otro control lo bloquea → **confirmar**, recordando que el núcleo debe quedar idéntico a `plantillas/e2e/core/` (las mejoras genéricas van también a la plantilla; lo del proyecto va en `pages/` o `tests/`).
+- Ejecutar Playwright pidiendo escenarios `@escritura` dentro de `<UDISTRITAL>` (`playwright test` con `@escritura` en algún argumento, `E2E_ESCRITURA=1`, o el script `test:escritura` con npm/pnpm/yarn) → **confirmar**: escriben en un ambiente compartido y solo corren con autorización, de a uno y verificando la limpieza. (El núcleo E2E ya excluye los `@escritura` de `npm test` y de `playwright test <archivo>`.)
 
 ## Avisos y contexto
 

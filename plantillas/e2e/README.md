@@ -100,6 +100,8 @@ e2e/
 
 **Garantía de lectura:** en los escenarios `@lectura` el marco aborta cualquier `POST/PUT/PATCH/DELETE` a las APIs y lo deja en el reporte.
 
+**Seguro de escritura:** los escenarios `@escritura` solo corren si se piden de forma explícita: `npm run test:escritura` (`--grep @escritura`), un archivo con `--grep @escritura`, o `E2E_ESCRITURA=1`. `npm test` y `npx playwright test <archivo>` no los incluyen. Córrelos solo con autorización, de a uno, y verifica la limpieza al terminar (fixture `limpieza`).
+
 ## Agregar un escenario (equipo)
 
 1. Plan propio en `specs/<funcionalidad>.plan.md` (no se edita el plan de otra funcionalidad).
