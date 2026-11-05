@@ -15,7 +15,8 @@
 #   2. Guarda la carpeta udistrital en ~/.config/oas-ai-tools/config.json.
 #   3. Copia las reglas del equipo a <udistrital>/AGENTS.md y <udistrital>/CLAUDE.md (con respaldo) y crea .claude/specs.
 #   4. Instala los hooks de git del equipo en ~/.config/oas-ai-tools/git-hooks y los activa con core.hooksPath global.
-#   5. Detecta las herramientas de IA instaladas y explica el siguiente paso para cada una.
+#   5. Activa la actualización automática del plugin oas en ~/.claude/settings.json (con respaldo), detecta las
+#      herramientas de IA instaladas y explica el siguiente paso para cada una.
 #   6. Corre las pruebas (hooks de git y casos de los guardianes).
 set -uo pipefail
 
@@ -147,24 +148,64 @@ fi
 titulo "5. Herramientas de IA detectadas"
 CLAUDE_BIN="$(command -v claude || ls -d "$HOME"/.vscode-server/extensions/anthropic.claude-code-*/resources/native-binary/claude "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude 2>/dev/null | sort -V | tail -1 || true)"
 HAY_OTRA=0
+REMOTO="$(git -C "$RAIZ_REPO" remote get-url origin 2>/dev/null | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')"
+# Actualización automática del marketplace: Claude Code sólo la trae activada para los marketplaces oficiales.
+# Se declara en ~/.claude/settings.json (extraKnownMarketplaces.oas-udistrital.autoUpdate), que es donde la guarda
+# /plugin → Marketplaces → Enable auto-update. OAS_CLAUDE_SETTINGS cambia la ruta (pruebas).
+activar_actualizacion_automatica() {
+  local ajustes="${OAS_CLAUDE_SETTINGS:-$HOME/.claude/settings.json}" estado
+  estado="$(python3 - "$ajustes" <<'PY'
+import json, os, sys
+p = sys.argv[1]
+try:
+    s = json.load(open(p)) if os.path.exists(p) else {}
+except ValueError:
+    print("invalido"); sys.exit()
+e = (s.get("extraKnownMarketplaces") or {}).get("oas-udistrital") or {}
+print("activa" if e.get("autoUpdate") is True else "inactiva")
+PY
+)"
+  case "$estado" in
+    activa) c_ok "Actualización automática del plugin activa (marketplace oas-udistrital)"; return ;;
+    invalido) c_er "$ajustes no es JSON válido: no lo toco. Corrígelo y vuelve a ejecutar."; return ;;
+  esac
+  if [ "$SOLO_VERIFICAR" = 1 ]; then c_av "Actualización automática del plugin desactivada (bash instalar.sh la activa)"; return; fi
+  if ! [[ "$REMOTO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+    c_av "No pude leer el repo de GitHub del origin ($REMOTO): activa la actualización automática en /plugin → Marketplaces → oas-udistrital."
+    return
+  fi
+  mkdir -p "$(dirname "$ajustes")"
+  respaldar "$ajustes"
+  python3 - "$ajustes" "$REMOTO" <<'PY'
+import json, os, sys
+p, repo = sys.argv[1:3]
+s = json.load(open(p)) if os.path.exists(p) else {}
+mercados = s.setdefault("extraKnownMarketplaces", {})
+e = mercados.setdefault("oas-udistrital", {})
+e.setdefault("source", {"source": "github", "repo": repo})  # si ya estaba declarado, se conserva su origen
+e["autoUpdate"] = True
+json.dump(s, open(p, "w"), indent=2, ensure_ascii=False)
+open(p, "a").write("\n")
+PY
+  c_ok "Actualización automática del plugin activada en $ajustes: Claude Code trae la última versión al abrir (reinicia la sesión abierta)"
+}
+if [ -n "$CLAUDE_BIN" ] || [ -d "$HOME/.claude" ]; then
+  activar_actualizacion_automatica
+fi
 if [ -n "$CLAUDE_BIN" ]; then
   c_ok "Claude Code ($("$CLAUDE_BIN" --version 2>/dev/null | head -1))"
   if "$CLAUDE_BIN" plugin list 2>/dev/null | grep -q "oas@oas-udistrital"; then
     V_REPO="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$RAIZ_REPO/.claude-plugin/plugin.json" 2>/dev/null)"
     V_INST="$(python3 -c 'import json,os;d=json.load(open(os.path.expanduser("~/.claude/plugins/installed_plugins.json")));print(d["plugins"]["oas@oas-udistrital"][0]["version"])' 2>/dev/null)"
     if [ -n "$V_REPO" ] && [ -n "$V_INST" ] && [ "$V_REPO" != "$V_INST" ]; then
-      c_av "Plugin oas instalado en $V_INST, pero este repo está en $V_REPO. Claude Code no actualiza solo los marketplaces de terceros: en Claude Code, /plugin → Marketplaces → oas-udistrital → actualizar (y activa la actualización automática para que lo haga al abrir); luego reinicia la sesión."
+      c_av "Plugin oas instalado en $V_INST, pero este repo está en $V_REPO. Con la actualización automática se trae al abrir Claude Code; para no esperar: claude plugin marketplace update oas-udistrital && claude plugin update oas@oas-udistrital, y reinicia la sesión."
     else
       c_ok "Plugin oas instalado (${V_INST:-?})"
     fi
-    echo "     Para recibir las versiones nuevas al abrir Claude Code: /plugin → Marketplaces → oas-udistrital → activar la actualización automática."
   else
-    REMOTO="$(git -C "$RAIZ_REPO" remote get-url origin 2>/dev/null | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')"
     echo "     Instálalo (en la terminal o dentro de Claude Code con /plugin):"
     echo "       claude plugin marketplace add ${REMOTO:-$RAIZ_REPO}"
     echo "       claude plugin install oas@oas-udistrital"
-    echo "     Y activa la actualización automática (Claude Code no la activa para marketplaces de terceros):"
-    echo "       /plugin → Marketplaces → oas-udistrital → activar la actualización automática"
   fi
 fi
 for herramienta in cursor codex gemini windsurf; do

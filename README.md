@@ -70,14 +70,9 @@ claude plugin install oas@oas-udistrital
 
 (Dentro de Claude Code también: `/plugin marketplace add …` y `/plugin install oas@oas-udistrital`.) Abre una sesión nueva. Las skills quedan como `/oas:planificar-issue`, `/oas:commit-oas`, etc.
 
-**Activa la actualización automática.** Claude Code sólo la trae activada para los marketplaces oficiales de Anthropic; para este (de terceros) viene apagada y el plugin se queda en la versión que instalaste. Se activa una sola vez:
+**Actualización automática.** Claude Code sólo la trae activada para los marketplaces oficiales de Anthropic; para este (de terceros) viene apagada y el plugin se quedaría en la versión que instalaste. **`bash instalar.sh` la activa**: declara el marketplace en `~/.claude/settings.json` con `extraKnownMarketplaces.oas-udistrital.autoUpdate: true` (con respaldo del archivo; si ya está, no lo toca). Es el mismo ajuste que guarda `/plugin` → **Marketplaces** → **oas-udistrital** → **Enable auto-update**, que sigue sirviendo si no usas el instalador.
 
-1. Abre Claude Code en la terminal (`claude`). Si trabajas en el panel de VS Code y `/plugin` no te muestra la pantalla de marketplaces, abre la terminal integrada y ejecuta `claude`: el ajuste es de tu usuario y vale para los dos.
-2. Escribe `/plugin` y Enter.
-3. Ve a la pestaña **Marketplaces** (flechas o Tab), selecciona **oas-udistrital** y Enter.
-4. Elige **Enable auto-update** (activar la actualización automática).
-
-Con eso, cada vez que abras Claude Code trae la última versión publicada. La sesión que ya estaba abierta sigue con la versión que cargó: reiníciala para ver la nueva. La CLI (`claude plugin …`) no tiene opción para activarla; sólo `claude plugin marketplace update oas-udistrital` y `claude plugin update oas@oas-udistrital` para actualizar a mano.
+Con eso, cada vez que abras Claude Code trae la última versión publicada. La sesión que ya estaba abierta sigue con la versión que cargó: reiníciala para ver la nueva. Para no esperar: `claude plugin marketplace update oas-udistrital` y `claude plugin update oas@oas-udistrital`.
 
 Si antes tenías estas herramientas copiadas a mano en `~/.claude`, retíralas para no duplicar hooks: `bash instalar.sh --migrar-desde-manual` (las mueve a un respaldo).
 

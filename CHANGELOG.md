@@ -2,6 +2,11 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.9.1 · 2026-11-05
+
+- **`instalar.sh` activa la actualización automática del plugin**: declara el marketplace en `~/.claude/settings.json` (`extraKnownMarketplaces.oas-udistrital.autoUpdate: true`, el mismo ajuste que guarda `/plugin` → Marketplaces → Enable auto-update). Respalda el archivo antes y conserva el origen si el marketplace ya estaba declarado. Si ya está activa no lo toca, y si el JSON no es válido lo informa sin tocarlo. Con `--solo-verificar` solo informa. Antes había que activarla a mano en cada equipo. Para probarlo sobre una copia: `OAS_CLAUDE_SETTINGS=<ruta>`.
+- README y avisos del instalador: la actualización automática queda a cargo del instalador; `/plugin` queda como alternativa.
+
 ## 1.9.0 · 2026-11-05
 
 Las pruebas e2e corren contra el ambiente de pruebas desplegado sin editar `.env.e2e`. Es lo aprendido al validar `plan_anual_auditoria_mf` antes de producción (udistrital/sisifo_documentacion#940).
