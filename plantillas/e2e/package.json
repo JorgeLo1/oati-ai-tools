@@ -7,6 +7,8 @@
     "test": "playwright test",
     "test:lectura": "playwright test --grep @lectura",
     "test:escritura": "playwright test --grep @escritura",
+    "test:pruebas": "E2E_AMBIENTE=pruebas playwright test",
+    "test:lectura:pruebas": "E2E_AMBIENTE=pruebas playwright test --grep @lectura",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit"
   },

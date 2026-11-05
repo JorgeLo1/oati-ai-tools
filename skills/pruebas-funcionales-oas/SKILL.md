@@ -116,6 +116,8 @@ Con login manual no hay renovación automática: si el escenario termina en WSO2
    - **`aria-hidden` en el `<main>` del root**: cuando un `MatDialog` se cierra mientras hay una alerta SweetAlert2 abierta, el contenedor queda con `aria-hidden="true"` y `getByRole` deja de encontrar botones y filas de la pantalla. En esas pantallas, los locators van por CSS o por texto **dentro del page object**, con un comentario que lo explique. Repórtalo como hallazgo de accesibilidad (la corrección es abrir la alerta en `afterClosed()`).
    - **Alertas**: en los flujos que escriben usa `resolverAlertas` (`pages/alertas.ts`). Confirma las preguntas, espera las alertas de carga, falla con el texto si es un error, vuelve a leer si la aplicación reemplaza la alerta antes del clic y, con `hasta`, sigue avisos encadenados. En SweetAlert2 v11 la clase de error está en el popup (`.swal2-popup.swal2-icon-error`), no en un hijo.
    - **Contenido que llega tarde**: diálogos con pestañas o documentos (Ver Documentos, historiales) muestran primero lo fijo (botón "Regresar", pestañas obligatorias) y el resto cuando termina la descarga. Espera lo que vas a verificar (`expect.poll` sobre las pestañas, `waitForResponse` de la descarga), nunca el primer elemento estático: leer antes produce **falsos hallazgos**.
+   - **Tablas que cambian con un filtro** (vigencia, tipo): la tabla anterior sigue en pantalla hasta que llega la respuesta nueva. El page object espera la respuesta del listado (`waitForResponse`) y después la cantidad de filas que trae, no "hay filas o el aviso de vacío".
+   - **Menús que dependen del rol y del estado**: no tomes "la primera fila". Busca la fila cuya opción principal es la que necesita el escenario, en orden de preferencia y, si hace falta, en otras vigencias, con un mensaje claro si no hay dato.
 4. **Escenarios** en `e2e/tests/<modulo>/<escenario>.spec.ts`, **uno por archivo**, importando `test` y `expect` de `../../core/fixtures`, con cabecera `// spec: e2e/specs/<funcionalidad>.plan.md` y etiquetas:
    ```ts
    test('<escenario>', { tag: ['@plan-mejoramiento', '@auditor', '@lectura'] }, async ({ page, escriturasBloqueadas }, testInfo) => {
@@ -159,8 +161,10 @@ npx playwright test --ui                   # modo UI: escenario por escenario, p
 npx playwright test --headed               # el navegador haciendo el flujo
 npx playwright test <archivo> --debug      # paso a paso
 npm run report                             # reporte HTML de la última corrida
+npm run test:pruebas                       # lo mismo contra el ambiente de pruebas desplegado (E2E_AMBIENTE=pruebas)
 ```
 
+- **Ambientes sin editar `.env.e2e`**: `E2E_AMBIENTE=<nombre>` toma `E2E_BASE_URL_<NOMBRE>` (p. ej. `pruebas` → `E2E_BASE_URL_PRUEBAS`) y guarda las sesiones en `.auth/<nombre>/`; sin la variable se usa `E2E_BASE_URL` como siempre. Antepónla a cualquier comando (`E2E_AMBIENTE=pruebas npx playwright test --grep @<modulo>`). Al correr contra lo desplegado, verifica antes **qué versión está desplegada** (el `main.js` y los chunks del MF desde su CloudFront, las ramas `release/*` y el estado de Drone del commit) y corre solo lo que aplica; un escenario de un PR sin desplegar se corre como control y se reporta aparte.
 - **WSL**: `--ui`, `--headed` y `--debug` necesitan la interfaz gráfica (`guiApplications=true` en `C:\Users\<usuario>\.wslconfig` + `wsl --shutdown`; `ls /tmp/.X11-unix/` muestra `X0`). Sin ella, `npx playwright test --ui-port=9323` y abrir `http://localhost:9323` en el navegador de Windows (se ven los pasos, no en vivo). No cambies el `.wslconfig` sin confirmación: reiniciar WSL apaga todo el stack.
 - **Resultados**: consola (✓/✘), `e2e/playwright-report/` (pasos, capturas adjuntas, errores; solo la última corrida) y `e2e/test-results/` (traza `trace.zip` de los que fallan: `npx playwright show-trace …`).
 - **Corridas largas** (ciclos con escritura, suite completa): en segundo plano, una a la vez, con `--reporter=line` a un archivo y un aviso por resultado. Antes de relanzar tras un reinicio, comprueba que el stack responde (`curl` a root y MF).
@@ -218,7 +222,7 @@ npm run report                             # reporte HTML de la última corrida
 
 Las mismas pruebas sirven para que funcionamiento verifique el sistema antes y después de un cambio, y para el pipeline cuando se autorice. Corren contra el **ambiente de pruebas desplegado**, solo `@lectura`.
 
-- **Funcionamiento**: clona el MF, `cd e2e && npm ci && npx playwright install chromium`, crea `.env.e2e` con las cuentas que le entrega el responsable, y corre `E2E_BASE_URL=<url de pruebas> npm run test:lectura`. No necesita Angular ni levantar el stack. El `e2e/README.md` está escrito para quien no desarrolla.
+- **Funcionamiento**: clona el MF, `cd e2e && npm ci && npx playwright install chromium`, crea `.env.e2e` con las cuentas que le entrega el responsable, y corre `npm run test:lectura:pruebas` (con `E2E_BASE_URL_PRUEBAS` en su `.env.e2e`). No necesita Angular ni levantar el stack. El `e2e/README.md` está escrito para quien no desarrolla.
 - **Drone (no edites `.drone.yml` sin autorización)**: deja el borrador en el informe. Paso posterior al despliegue a pruebas (en SISIFO, `publish_s3_release` en `release/*`):
   ```yaml
   - name: e2e_pruebas
@@ -235,6 +239,10 @@ Las mismas pruebas sirven para que funcionamiento verifique el sistema antes y d
     depends_on: [<paso que despliega a pruebas>]
   ```
   La solicitud debe decir: los secrets los registra Infraestructura (nunca valores en el `.drone.yml`); solo `@lectura`; si falla, el pipeline se detiene; el reporte HTML solo en almacenamiento restringido (contiene la sesión); alguien es responsable de rotar las contraseñas de las cuentas de prueba; validar antes el login y el CORS contra la URL desplegada y la caché de CloudFront tras el despliegue; y avisar a Seguridad que hay credenciales de prueba en el pipeline.
+
+- **Contra lo desplegado, ya comprobado en SISIFO** (#940): las rutas profundas del root responden 200 (fallback del SPA); el CORS del core-mf y de los MF responde para el origen desplegado; el bloqueo de escrituras sigue funcionando porque las APIs van por el gateway de WSO2, un host distinto del root (confírmalo en el `environment` del build).
+- **Gestor documental en semillas**: `document/uploadAnyFormat` responde 400 `invalid pdf file` a **cualquier** archivo cuyo base64 tenga menos de 1000 caracteres, sea del formato que sea. Para una imagen de prueba usa píxeles incompresibles y un tamaño poco común (p. ej. 37×23), que además permite reconocerla en un PDF generado (diccionario `/Subtype /Image` con `/Width` y `/Height`) sin confundirla con los logos de la plantilla.
+- **Documentos generados por el MID** (preinformes, PDF): si el MF los pide con GET, se validan en `@lectura` capturando la respuesta (`waitForResponse`) y adjuntando el PDF al reporte. Un 500 genérico del MID suele ser un dato incompleto de la semilla (p. ej. un campo que el usuario llena en otro paso): compáralo con otras entidades antes de reportarlo.
 
 ## Pruebas de API sin interfaz
 

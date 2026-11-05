@@ -3,7 +3,9 @@
  * usuario y construcción de un proyecto de Playwright por rol.
  *
  * Convención común a todos los proyectos udistrital:
- *   E2E_BASE_URL                 URL del root que compone los MF
+ *   E2E_BASE_URL                 URL del root que compone los MF (por defecto http://localhost:4200)
+ *   E2E_AMBIENTE=<nombre>        corre contra E2E_BASE_URL_<NOMBRE> (p. ej. pruebas → E2E_BASE_URL_PRUEBAS)
+ *                                sin editar .env.e2e; sus sesiones quedan aparte en .auth/<nombre>/
  *   E2E_<ROL>_USER / _PASS       usuario de prueba dedicado por rol (jefe-dependencia → JEFE_DEPENDENCIA)
  *   E2E_ESCRITURA=1              permite correr escenarios @escritura (o pasar --grep @escritura)
  */
@@ -11,16 +13,31 @@ import path from 'node:path';
 import type { Project } from '@playwright/test';
 
 export const RAIZ_E2E = path.resolve(__dirname, '..');
-export const DIR_SESIONES = path.join(RAIZ_E2E, '.auth');
 
-// Local: lee e2e/.env.e2e si existe (Node >= 20.12). En CI las variables llegan como secrets.
+// Local: lee e2e/.env.e2e si existe (Node >= 20.12); no pisa las variables que ya trae el entorno.
+// En CI las variables llegan como secrets.
 try {
   process.loadEnvFile(path.join(RAIZ_E2E, '.env.e2e'));
 } catch {
   /* sin archivo: se usan las variables del entorno */
 }
 
-export const BASE_URL = (process.env['E2E_BASE_URL'] || 'http://localhost:4200').replace(/\/$/, '');
+/** Ambiente elegido con E2E_AMBIENTE (minúsculas, con "-"); vacío = el de E2E_BASE_URL. */
+export const AMBIENTE = (process.env['E2E_AMBIENTE'] || '').trim().toLowerCase();
+
+function urlDelAmbiente(): string {
+  if (!AMBIENTE) return process.env['E2E_BASE_URL'] || 'http://localhost:4200';
+  if (!/^[a-z0-9-]+$/.test(AMBIENTE)) throw new Error(`[e2e] E2E_AMBIENTE inválido: "${AMBIENTE}" (solo letras, números y "-")`);
+  const variable = `E2E_BASE_URL_${AMBIENTE.toUpperCase().replace(/-/g, '_')}`;
+  const url = process.env[variable];
+  if (!url) throw new Error(`[e2e] E2E_AMBIENTE=${AMBIENTE} pide ${variable}, que no está en e2e/.env.e2e ni en el entorno`);
+  return url;
+}
+
+export const BASE_URL = urlDelAmbiente().replace(/\/$/, '');
+
+/** Sesiones por ambiente: al cambiar de ambiente no se pisan ni obligan a repetir los logins. */
+export const DIR_SESIONES = AMBIENTE ? path.join(RAIZ_E2E, '.auth', AMBIENTE) : path.join(RAIZ_E2E, '.auth');
 
 /**
  * Los escenarios @escritura cambian datos de un ambiente compartido: solo corren si se piden de forma

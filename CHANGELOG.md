@@ -2,6 +2,22 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.9.0 · 2026-11-05
+
+Las pruebas e2e corren contra el ambiente de pruebas desplegado sin editar `.env.e2e`. Es lo aprendido al validar `plan_anual_auditoria_mf` antes de producción (udistrital/sisifo_documentacion#940).
+
+- **Plantilla e2e, `core/`** (idéntico al de la implementación de referencia):
+  - `E2E_AMBIENTE=<nombre>` toma `E2E_BASE_URL_<NOMBRE>` (p. ej. `pruebas` → `E2E_BASE_URL_PRUEBAS`). Si falta, la corrida falla con un mensaje claro. Sin la variable todo sigue igual (`E2E_BASE_URL`, Drone).
+  - Sesiones por ambiente en `.auth/<nombre>/`: cambiar de local a pruebas no pisa las sesiones ni repite los logins.
+  - El global-setup imprime `[e2e] ambiente: … → <url>`.
+- **Plantilla e2e**: scripts `test:pruebas` y `test:lectura:pruebas`; `E2E_BASE_URL_PRUEBAS` en `.env.e2e.example`; README con "Local o pruebas sin editar `.env.e2e`".
+- **`pruebas-funcionales-oas`**:
+  - Ambientes con `E2E_AMBIENTE`. Antes de correr contra lo desplegado, verificar qué versión está desplegada (bundle del MF, `release/*`, Drone) y correr como control lo que aún no esté.
+  - Lo ya comprobado contra lo desplegado: rutas profundas, CORS y bloqueo de escrituras por el gateway.
+  - Tablas que cambian con un filtro (esperar la respuesta nueva y sus filas) y menús por rol y estado (buscar la fila por opción, no la primera).
+  - Gestor documental: 400 `invalid pdf file` con base64 de menos de 1000 caracteres. Imagen de prueba incompresible y de tamaño reconocible en el PDF.
+  - Documentos generados por el MID validados en `@lectura`, capturando el GET. Un 500 genérico suele ser un dato incompleto de la semilla.
+
 ## 1.8.0 · 2026-10-29
 
 Lo aprendido en los escenarios de escritura de Programación de `plan_anual_auditoria_mf` (udistrital/sisifo_documentacion#939, etapa 2).

@@ -4,7 +4,7 @@
  */
 import fs from 'node:fs';
 import type { FullConfig } from '@playwright/test';
-import { DIR_SESIONES, rolesConUsuario, rutaSesion } from './config';
+import { AMBIENTE, BASE_URL, DIR_SESIONES, rolesConUsuario, rutaSesion } from './config';
 import { CLAVES_SESION_POR_DEFECTO, renovarSesion, rutaMarcaRenovada, sesionReutilizable } from './sesion';
 
 export interface MetadatosE2E {
@@ -17,6 +17,8 @@ export interface MetadatosE2E {
 export default async function globalSetup(config: FullConfig) {
   const { roles = [], clavesSesion = CLAVES_SESION_POR_DEFECTO } = (config.metadata ?? {}) as Partial<MetadatosE2E>;
   fs.mkdirSync(DIR_SESIONES, { recursive: true });
+  // La URL del root no es secreta: deja claro en la salida contra qué ambiente se corrió.
+  console.log(`[e2e] ambiente: ${AMBIENTE || 'E2E_BASE_URL'} → ${BASE_URL}`);
 
   for (const rol of rolesConUsuario(roles)) {
     const ruta = rutaSesion(rol);
