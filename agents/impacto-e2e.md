@@ -22,7 +22,7 @@ El prompt trae:
 - `REPO`: ruta absoluta del MF. Trabaja con `git -C <REPO>` y rutas absolutas.
 - `ORIGEN`: `pull` (llegaron cambios de otras personas), `pr` (PR de un compañero en revisión) o `propio` (cambios de la tarea en curso).
 - Según el origen:
-  - `pull`: `RANGO` (`<desde>..<hasta>`, o `desconocido`: reconstrúyelo con los últimos commits de otros autores).
+  - `pull`: `RANGO` (`<desde>..<hasta>`, o `desconocido`: reconstrúyelo con los últimos commits de otros autores). Los cambios traídos son los commits de **otros autores** (`git log --no-merges --format='%h %an %ae %s' RANGO`, sin los de `git config user.email`) **más la resolución de cada merge del rango** (`git log --merges --format='%h %an %s' RANGO` y, por cada uno, `git show --remerge-diff --stat <merge>`; si tu git es anterior a 2.36, `git show --cc <merge>`). Una resolución de conflicto puede cambiar el comportamiento que llegó aunque el merge sea del usuario local: si toca archivos de la interfaz, analiza su diff (`git show --remerge-diff <merge> -- <archivo>`) como un cambio más y di de quién es.
   - `pr`: `PR` (número) y `GH_REPO` (`udistrital/<repo>`). El diff se lee con `gh pr diff <PR> -R <GH_REPO>` y `gh pr view <PR> -R <GH_REPO> --json files,headRefName,author`. **Nunca** hagas checkout, fetch ni pull del PR. El `e2e/` local del REPO es la base contra la que comparas; el `e2e/` que trae el PR está en su diff.
   - `propio`: `BASE` (rama o commit base, p. ej. `develop`). El cambio es `git diff <BASE>...HEAD` **más** lo no commiteado (`git diff HEAD`, `git status --short`).
 - Opcional: `MODULOS` (módulos que detectó el hook) y `NOTAS`.
@@ -35,7 +35,9 @@ Si `<REPO>/e2e/playwright.config.*` no existe (ni `playwright.config.*` en la ra
 - **No ejecutes** `playwright test` sin `--list`, `npm test`, `test:*` ni nada que abra el navegador o haga login: eso lo decide el usuario. Lo único que corres es la compilación (§4).
 - Con `ORIGEN: pull` o `pr` los cambios son **de otra persona**: propones y señalas a quién avisar; no presentes la corrección como algo que se aplica sin hablar con el autor (regla de trabajo en equipo de `/pruebas-funcionales-oas`).
 - `e2e/core/` es idéntico a `plantillas/e2e/core/` del plugin oas. Si el cambio toca `e2e/core/`, compáralo (`diff -r <REPO>/e2e/core <PLANTILLA>/core`, con la plantilla en `${CLAUDE_PLUGIN_ROOT}/plantillas/e2e` o la ruta que traiga el prompt) y repórtalo: una mejora genérica va a la plantilla; una del proyecto va en `pages/` o `tests/`.
-- Lee `<REPO>/.claude/docs/` (índice `README.md`) si existe, para ubicar el dominio y las pantallas.
+- **Evalúa contra `HEAD`** (o contra el head del PR con `ORIGEN: pr`), no contra cada commit suelto: lo que un commit ajeno rompió puede haberlo corregido otro commit posterior del rango. Antes de reportar un hallazgo, confirma que la prueba sigue igual en `HEAD` (`grep` en el árbol actual). Si ya cambió, busca qué commit la corrigió (`git log --format='%h %an %s' RANGO -- <archivo de la prueba>` o `git log -S '<locator>'`) y repórtalo como **Corregido en `<hash>`**.
+- **No afirmes que un commit "falta subir"** sin comprobarlo: `git branch -r --contains <hash>` (si aparece una rama remota, ya está subido; di en cuál).
+- Lee `<REPO>/.claude/docs/` (índice `README.md` y el documento del dominio) **solo si el diff no basta** para ubicar la pantalla, el rol o el flujo.
 
 ## 3. Del diff a lo que usan las pruebas
 
@@ -63,6 +65,7 @@ Si `<REPO>/e2e/playwright.config.*` no existe (ni `playwright.config.*` en la ra
    - **En riesgo**: el flujo que recorre el escenario cambió (paso nuevo, control que ahora aparece por condición, orden distinto, otra respuesta del API) aunque los locators sigan existiendo.
    - **Sin cobertura**: pantalla, acción o rol nuevos sin escenario. Propón el escenario y en qué plan (`e2e/specs/<funcionalidad>.plan.md`) va.
    - **Plan desactualizado**: el plan describe pasos o textos que ya no son así.
+   - **Corregido en `<hash>`**: estaba roto por el cambio, pero un commit posterior del rango ya lo ajustó (di si ese commit está subido). Va en la tabla para que el autor del cambio sepa qué se tocó, sin fragmento de corrección.
    - Si una señal no aparece en ninguna prueba, no la reportes.
 
 ## 4. Compilación (sin navegador)
@@ -85,17 +88,20 @@ Responde en español, breve y accionable, con este formato:
 
 Compilación: tsc <ok | N errores> · playwright --list <N escenarios | no se pudo: motivo>
 
-| Estado | Prueba (archivo:línea) | Causa (archivo:línea del cambio) | Cambio propuesto |
+| Estado | Prueba (archivo:línea o método) | Causa (commit · archivo:línea del cambio) | Cambio propuesto |
 |---|---|---|---|
-| Roto | e2e/pages/x.page.ts:42 | `x.component.html:17` renombró "Guardar" → "Registrar" | `getByRole('button', { name: 'Registrar' })` |
+| Roto | e2e/pages/x.page.ts:42 | abc1234 · `x.component.html:17` renombró "Guardar" → "Registrar" | `getByRole('button', { name: 'Registrar' })` |
+| Corregido en def5678 (subido a origin/develop) | `XPage.editor()`, `XPage.aviso()` | abc1234 · `x.component.html:90` agregó un segundo editor | — |
 
 Sin cobertura: <pantallas/acciones nuevas y escenario propuesto, o "ninguna">
 Plan desactualizado: <plan y pasos, o "ninguno">
 e2e/core/: <sin cambios | difiere de la plantilla: …>
 
 Para correr lo afectado: `cd e2e && PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep "@<modulo>|@<otro>"`
-(solo @lectura; los @escritura se piden aparte con autorización)
+(corre solo los @lectura: el seguro de escritura de `e2e/core/config.ts` excluye los @escritura salvo que se pidan con `--grep @escritura` o `E2E_ESCRITURA=1`, que requieren autorización)
 ```
+
+No agregues `--grep-invert "@escritura"`: el núcleo ya los excluye. Si el `core/config.ts` del MF no tiene el seguro de escritura (difiere de la plantilla), dilo en la línea de `e2e/core/` y entonces sí sugiere `--grep-invert "@escritura"`.
 
 Después de la tabla, para cada **Roto** y **En riesgo** incluye el fragmento antes/después del page object o escenario, corto, listo para aplicar. Según el origen, cierra con:
 

@@ -2,6 +2,17 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.10.1 · 2026-11-06
+
+Ajustes al agente `impacto-e2e` tras probarlo con un pull real en `plan_anual_auditoria_mf` (19 commits, 2 de otras personas).
+
+- **Evalúa contra `HEAD`.** Un roto que ya corrigió un commit posterior del rango se reporta con el estado nuevo **Corregido en `<hash>`**, sin fragmento de corrección. En la prueba, el agente dio por pendiente un ajuste que ya estaba hecho.
+- **No afirma que un commit "falta subir"** sin comprobarlo con `git branch -r --contains`. En la prueba lo afirmó de un commit que ya estaba en `origin/develop`.
+- **Revisa la resolución de los merges del rango** (`git show --remerge-diff`, o `--cc` en git anterior a 2.36). Con `--no-merges` se perdía lo que cambia al resolver un conflicto. En la prueba, ahí estaba un hallazgo real: el mensaje de falla del gestor documental en los subtemas.
+- **Comando `--grep`:** aclara que el seguro de escritura del núcleo ya excluye los `@escritura`. Solo sugiere `--grep-invert` si el `core/` del MF no tiene ese seguro.
+- **`.claude/docs`:** lo lee solo si el diff no basta para ubicar la pantalla o el flujo.
+- La tabla del informe identifica el commit de cada causa y admite métodos en la columna de la prueba.
+
 ## 1.10.0 · 2026-11-06
 
 - **Nuevo agente `impacto-e2e`** (A4). Dice qué page objects, escenarios y planes e2e de un MF rompe o deja en riesgo un cambio, qué pantallas nuevas quedan sin cobertura y cómo ajustarlos, con archivo:línea de la prueba y del cambio. Cruza el diff (plantillas `.html`, componentes, rutas, textos, `aria-label`, `formControlName`, columnas, URLs, i18n) con `e2e/pages`, `e2e/tests` y `e2e/specs`, compila con `tsc --noEmit` y `playwright test --list` y da el comando `--grep`. Es de solo lectura: no edita, no corre escenarios ni lee `.env*` ni `e2e/.auth/`. Tiene tres orígenes:

@@ -107,7 +107,7 @@ Estructura exigida:
 ### A4 — Agente `impacto-e2e`
 Dice qué pruebas e2e de un MF quedan afectadas por un cambio y cómo actualizarlas (ver `agents/impacto-e2e.md`). Orígenes: `pull` (lo pide A2), `pr` (desde `code-review-oas`, leyendo el diff con `gh` sin checkout) y `propio` (desde `planificar-issue`, diff contra la base más lo no commiteado).
 - **Sólo lectura**: no edita archivos, no hace operaciones git que cambien el repo y no corre escenarios; lo único que ejecuta es la compilación (`tsc --noEmit` y `playwright test --list`, que no hace login). No lee `.env*` ni `e2e/.auth/`.
-- Cruza las señales del diff (textos, `aria-label`, `formControlName`, columnas, rutas, URLs, i18n, cambios en `e2e/`) con `e2e/pages`, `e2e/tests` y `e2e/specs`, y clasifica: roto, en riesgo, sin cobertura, plan desactualizado.
+- Cruza las señales del diff (textos, `aria-label`, `formControlName`, columnas, rutas, URLs, i18n, cambios en `e2e/`) con `e2e/pages`, `e2e/tests` y `e2e/specs`, y clasifica: roto, en riesgo, sin cobertura, plan desactualizado o corregido en `<commit>`. Con `pull`, los cambios traídos son los commits de otros autores **y la resolución de los merges del rango** (`git show --remerge-diff`). Evalúa contra `HEAD`: lo que un commit posterior ya ajustó se reporta como corregido, y no afirma que un commit falta subir sin comprobarlo con `git branch -r --contains`.
 - Entrega archivo:línea de la prueba y del cambio, el cambio propuesto, el estado de `e2e/core/` frente a la plantilla y el comando `--grep` de los módulos. Con `pull` agrega a qué autores avisar; con `pr`, comentarios de revisión; con `propio`, la lista de ajustes para el mismo PR.
 
 ## Hooks de git del equipo (cualquier herramienta y personas)
