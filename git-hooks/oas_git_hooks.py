@@ -32,6 +32,7 @@ except Exception:  # instalado sin oas_config
 ETIQUETAS = ("feat", "fix", "docs", "test", "refactor", "devops", "management")
 RE_PRIMERA = re.compile(r"^(" + "|".join(ETIQUETAS) + r"): \S.*$")
 RE_ATRIBUCION = re.compile(r"claude|anthropic|co-authored-by|generated with|noreply@anthropic|🤖|\bIA\b|\bAI\b|\bLLM\b", re.I)
+RE_RUTA_CLAUDE = re.compile(r"\.claude(?:/[\w./-]*)?|\bclaude\.md\b", re.I)  # rutas (.claude/docs, CLAUDE.md): no son atribución
 RE_RAMA = re.compile(r"^(feature|hotfix)/[a-z0-9][a-z0-9._-]*$|^release/[0-9]+\.[0-9]+\.[0-9]+$")
 RE_RAMA_IA = re.compile(r"claude|anthropic|(^|[/_.-])(ai|ia|bot|llm|gpt|copilot)([/_.-]|$)", re.I)
 BASES = ("develop", "master", "main")
@@ -144,7 +145,7 @@ def commit_msg(ruta):
     if not RE_PRIMERA.match(primera):
         errores.append(f"Primera línea `{primera[:70]}` inválida. Formato: `<etiqueta>: <descripción en español>` con "
                        f"etiqueta {', '.join(ETIQUETAS)} (no chore, style, perf, build, ci, feature, hotfix, wip…).")
-    m = RE_ATRIBUCION.search("\n".join(lineas))
+    m = RE_ATRIBUCION.search(RE_RUTA_CLAUDE.sub("", "\n".join(lineas)))
     if m:
         errores.append(f"El mensaje contiene una referencia a Claude/IA (`{m.group(0)}`): quítala "
                        "(Co-Authored-By, \"Generated with\", 🤖, IA/AI/LLM).")

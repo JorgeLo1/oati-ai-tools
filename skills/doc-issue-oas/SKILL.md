@@ -1,6 +1,7 @@
 ---
 name: doc-issue-oas
-description: Genera la documentación en Markdown de lo implementado para una issue de SISIFO (udistrital/sisifo_documentacion), con el formato de comentario "Avances issue DD/MM/YYYY" que usa el equipo en sus issues — descripción, cambios por repositorio (CRUD / MID / MF) con archivos y fragmentos antes/después, comportamiento, pruebas con espacios para capturas y commits. Úsala cuando el usuario diga "documenta la issue", "documentación de la issue #N", "genera el avance de la issue", "/doc-issue-oas", o al terminar una tarea cuyo criterio de aceptación sea "Documentación implementación".
+description: >-
+  Genera la documentación en Markdown de lo implementado para una issue de SISIFO (udistrital/sisifo_documentacion), con el formato de comentario "Avances issue DD/MM/YYYY" que usa el equipo en sus issues — descripción, cambios por repositorio (CRUD / MID / MF) con archivos y fragmentos antes/después, comportamiento, pruebas con espacios para capturas y commits. Úsala cuando el usuario diga "documenta la issue", "documentación de la issue #N", "genera el avance de la issue", "/doc-issue-oas", o al terminar una tarea cuyo criterio de aceptación sea "Documentación implementación".
 ---
 
 # Documentación de issue (SISIFO / OAS)

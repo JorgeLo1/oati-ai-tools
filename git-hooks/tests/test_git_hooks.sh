@@ -38,6 +38,9 @@ t "etiqueta chore" bloquea commit -m "chore: x"
 t "sin etiqueta" bloquea commit -m "Se arregla el bug"
 t "Co-Authored-By" bloquea commit -m "fix: x" -m "Co-Authored-By: Claude <noreply@anthropic.com>"
 t "menciona IA" bloquea commit -m "fix: ajuste hecho con IA"
+t "menciona Claude fuera de una ruta" bloquea commit -m "docs: guía" -m "Hecho con Claude"
+t "ruta .claude/docs y CLAUDE.md no son atribución" pasa commit -m "docs: actualiza .claude/docs/02-skills.md y CLAUDE.md"
+echo c >> a.ts; git add a.ts
 t "palabra 'diagrama' no es IA" pasa commit -m "fix: ajuste del diagrama"
 printf 'X=1\n' > .env; git add -f .env
 t ".env en el commit" bloquea commit -m "fix: x"; git rm -q --cached .env; rm .env

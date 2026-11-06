@@ -19,7 +19,7 @@ Especificaciones (<udistrital>/.claude/specs/*.md):
   - borrador -> aprobada/en-implementacion/implementada exige respuesta "Aprobar plan…" del usuario
   - -> omitida exige "Omitir planificación…"; cambiar rama/repos de una aprobada exige "Aprobar cambio…"
     (en una pregunta AskUserQuestion que mencione el nombre del archivo; cada aprobación se usa una vez)
-Commits: exigen /commit-oas y, si incluyen código, /seguridad-oas. Stop: tras un commit real en un repo udistrital, /documentar-cambios.
+Commits: exigen /commit-oas y, si incluyen código, /seguridad-oas después del último commit en ese repo. Stop: tras un commit real en un repo udistrital, /documentar-cambios.
 Configuración del sistema (plugin oas-ai-tools, ~/.claude/{skills,agents,scripts,plugins}, settings, ~/.config/oas-ai-tools,
 <udistrital>/CLAUDE.md y AGENTS.md, archivos -off): editar pide confirmación.
 Lectura de .env: pide confirmación (herramienta Read o Bash).
@@ -323,7 +323,26 @@ def emitir(decision, razon):
 
 def contexto(datos):
     ev, ap, res = leer_transcript(datos.get("transcript_path"))
-    return {"eventos": ev, "aprobaciones": ap, "resultados": res}
+    return {"eventos": ev, "aprobaciones": ap, "resultados": res, "cwd": datos.get("cwd") or os.getcwd()}
+
+
+def commit_real(ctx, e, repo=None):
+    """¿El evento es un commit real (sin error y con la salida "[rama hash] mensaje")? Con `repo`, sólo si fue
+    en ese repo; sin él, en cualquier repo udistrital."""
+    if e[0] != "bash":
+        return False
+    dirs = dirs_commit(e[1], e[3] or ctx["cwd"])
+    if not (any(repo_de(d) == repo for d in dirs) if repo else any(bajo(d, RAIZ) for d in dirs)):
+        return False
+    error, texto = ctx["resultados"].get(e[2], (True, ""))
+    return not error and bool(RE_COMMIT_OK.search(texto))
+
+
+def desde_ultimo_commit(ctx, repo=None):
+    """Eventos posteriores al último commit real (en `repo` o en cualquier repo udistrital); todos si no hubo."""
+    evs = ctx["eventos"]
+    idx = max((i for i, e in enumerate(evs) if commit_real(ctx, e, repo)), default=-1)
+    return evs[idx + 1:], idx
 
 
 # ---------------------------------------------------------------- modos
@@ -415,8 +434,10 @@ def revisar_commit(g, cmd, ctx):
         staged += subprocess.run(["git", "diff", "--name-only"], cwd=repo, capture_output=True, text=True).stdout
     codigo = [f for f in staged.splitlines() if f.endswith(EXT_CODIGO) and not f.startswith(".claude/")
               and os.path.basename(f) not in LOCKFILES]
-    if codigo and not uso_skill(ctx["eventos"], "seguridad-oas"):
-        return "deny", (f"[skill-guard] El commit incluye {len(codigo)} archivo(s) de código y en esta sesión no se ha "
+    posteriores, idx = desde_ultimo_commit(ctx, repo)
+    if codigo and not uso_skill(posteriores, "seguridad-oas"):
+        cuando = "desde el último commit en este repo" if idx >= 0 else "en esta sesión"
+        return "deny", (f"[skill-guard] El commit incluye {len(codigo)} archivo(s) de código y {cuando} no se ha "
                         "ejecutado /seguridad-oas. Invoca la skill `seguridad-oas` sobre el diff, reporta los hallazgos "
                         "al usuario y luego retoma el commit.")
     return None, None
@@ -432,16 +453,9 @@ def stop(datos):
     if desactivado(repo):
         return
     ctx = contexto(datos)
-    evs, res = ctx["eventos"], ctx["resultados"]
-
-    def commit_real(e):  # en un repo udistrital, ejecutado sin error y con la salida "[rama hash] mensaje"
-        if e[0] != "bash" or not any(bajo(d, RAIZ) for d in dirs_commit(e[1], e[3] or cwd)):
-            return False
-        error, texto = res.get(e[2], (True, ""))
-        return not error and bool(RE_COMMIT_OK.search(texto))
-
-    idx = max((i for i, e in enumerate(evs) if commit_real(e)), default=-1)
-    if idx < 0 or uso_skill(evs[idx:], "documentar-cambios"):
+    evs = ctx["eventos"]
+    posteriores, idx = desde_ultimo_commit(ctx)
+    if idx < 0 or uso_skill(posteriores, "documentar-cambios"):
         return
     clave = f"{datos.get('session_id', '')}:{evs[idx][2]}"
     marca = os.path.join(tempfile.gettempdir(), "claude-skill-guard-stop")

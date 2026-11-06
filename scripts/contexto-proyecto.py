@@ -28,6 +28,8 @@ import oas_config  # noqa: E402
 SCRIPT = os.path.abspath(__file__)
 PRUEBAS = os.path.join(os.path.dirname(os.path.dirname(SCRIPT)), "git-hooks", "oas_pruebas.py")
 EXT_CODIGO = (".ts", ".js", ".mjs", ".cjs", ".go")
+EXT_INTERFAZ = (".ts", ".html", ".scss", ".css")
+PLANTILLA_E2E = os.path.join(os.path.dirname(os.path.dirname(SCRIPT)), "plantillas", "e2e")
 
 MAX_ARCHIVOS = 60
 MAX_COMMITS = 30
@@ -161,6 +163,20 @@ def modulos_e2e(root, archivos):
     return sorted(mods)
 
 
+def toca_interfaz(root, archivos):
+    """¿Los archivos traídos pueden afectar las e2e? Sólo si el repo tiene Playwright: código o plantillas de src/
+    (.ts .html .scss .css, textos de i18n) o la propia carpeta e2e/ (sin sus sesiones ni dependencias)."""
+    if dir_e2e(root) is None:
+        return False
+    for a in archivos:
+        if a.startswith("src/") and (a.endswith(EXT_INTERFAZ) or re.match(r"src/assets/i18n/.+\.json$", a)):
+            return True
+        if a.startswith("e2e/") and not a.startswith(("e2e/.auth/", "e2e/node_modules/")) and not \
+                os.path.basename(a).startswith(".env"):
+            return True
+    return False
+
+
 def ya_notificado(session_id, clave):
     """Evita repetir el aviso en la misma sesión para el mismo proyecto+HEAD."""
     marca = os.path.join(tempfile.gettempdir(), f"claude-contexto-{session_id or 'sin-sesion'}")
@@ -230,15 +246,15 @@ def revisar(root, sesion):
             "Repórtalo en una línea; si fallan, di qué specs y de qué commit/autor vienen. No corrijas código ni tests ajenos "
             "sin preguntar al usuario; si la suite no arranca, es deuda preexistente: dilo y sigue."
         )
-    modulos = modulos_e2e(root, archivos) if commits is not None else []
-    if modulos:
-        grep = "|".join(f"@{m}" for m in modulos)
-        cd = f"cd {dir_e2e(root)} && " if dir_e2e(root) else ""
+    if commits is not None and toca_interfaz(root, archivos):
+        modulos = modulos_e2e(root, archivos)
         pruebas += (
-            f"\nLlegaron cambios de otras personas a módulos del MF con pruebas funcionales ({', '.join(modulos)}). "
-            f"Sugiere al usuario, en una línea, correr sus escenarios si tiene el stack y la sesión: "
-            f"`{cd}PLAYWRIGHT_HTML_OPEN=never npx playwright test --grep \"{grep}\"` (ver /pruebas-funcionales-oas). "
-            "Es sólo una sugerencia: no los ejecutes sin que lo pida."
+            "\nLlegaron cambios de otras personas a la interfaz de un MF con pruebas e2e. Lanza también el agente "
+            "`impacto-e2e` (subagent_type: impacto-e2e, en segundo plano, en paralelo con contexto-proyecto) con el prompt: "
+            f"\"ORIGEN: pull. REPO: {root}. RANGO: {rango}. MODULOS: {','.join(modulos) or 'desconocidos'}. "
+            f"PLANTILLA: {PLANTILLA_E2E}\". Cuando termine, resume al usuario en pocas líneas lo roto o en riesgo y el "
+            "comando `--grep` para correrlo. No apliques sus propuestas ni corras escenarios sin que el usuario lo pida: "
+            "corregir el escenario o la interfaz de otra persona lo decide su autor."
         )
     return (
         f"[contexto-proyecto] Se detectaron cambios traídos (pull/merge/checkout) en {root} desde la última sincronización del contexto.\n"

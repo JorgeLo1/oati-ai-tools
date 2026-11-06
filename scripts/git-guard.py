@@ -26,6 +26,7 @@ import shell_cmd  # noqa: E402
 GIT = r"\bgit(?:\s+-[cC]\s+\S+)*\s+"
 ATRIBUCION = re.compile(r"co-authored-by|claude|anthropic|generated with|noreply@anthropic|🤖", re.IGNORECASE)
 ATRIBUCION_SIGLAS = re.compile(r"\b(IA|AI|LLM)\b", re.IGNORECASE)  # igual que la regla 0.8 de /commit-oas
+RUTA_CLAUDE = re.compile(r"\.claude(?:/[\w./-]*)?|\bclaude\.md\b", re.IGNORECASE)  # rutas, no atribución
 PESO = {"ask": 1, "deny": 2}
 
 
@@ -57,6 +58,7 @@ def mensaje_commit(seg, args):
 
 
 def tiene_atribucion(texto):
+    texto = RUTA_CLAUDE.sub("", texto)
     return bool(ATRIBUCION.search(texto) or ATRIBUCION_SIGLAS.search(texto))
 
 

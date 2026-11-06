@@ -30,13 +30,14 @@ Antes de proponer código, identifica el stack del repo y sigue el patrón de un
 | `release-oas` | Checklist de release y despliegue (versión, Swagger en OpenAPI 2.0 para WSO2, pasos por ambiente, rollback, tag, limpieza); no despliega ni publica |
 | `pruebas-funcionales-oas` | Pruebas funcionales y specs e2e de los MF con Playwright (sobre `playwright-cli`): stack local, sesión por rol, datos, evidencias |
 | agente `contexto-proyecto` | Genera/actualiza el contexto `.claude/docs/` del repo por módulos |
+| agente `impacto-e2e` | Qué page objects y escenarios e2e de un MF rompe o deja sin cobertura un cambio (pull, PR o propio), con el cambio propuesto; sólo lectura |
 
 En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `oas:contexto-proyecto`.
 
 ## 3. Contexto del proyecto
 
 - Si el repo tiene `.claude/CLAUDE.md` y `.claude/docs/`, **léelos** (índice y doc del módulo) antes de tocar un módulo.
-- Si falta el contexto o se trajeron cambios (pull/merge/checkout con commits de otras personas), lanza el agente `contexto-proyecto` antes de seguir.
+- Si falta el contexto o se trajeron cambios (pull/merge/checkout con commits de otras personas), lanza el agente `contexto-proyecto` antes de seguir. Si llegaron cambios de interfaz a un MF con `e2e/`, lanza también `impacto-e2e` y resume al usuario lo que quedó roto; no corrijas escenarios ni interfaz ajenos sin que el autor lo decida.
 - Al cambiar flujos, estados, endpoints o botones, actualiza el documento correspondiente de `.claude/docs/`.
 - `.claude/` es local: está en `.git/info/exclude` y nunca se commitea.
 

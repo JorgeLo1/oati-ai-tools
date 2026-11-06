@@ -56,10 +56,12 @@ En `develop`/`master`/otras ramas no se exige (el commit directo ahí lo frena e
 ### R8 — Escrituras por terminal
 Un comando de terminal que escribe, mueve o borra archivos se evalúa con R2, R4, R6 y R7 sobre cada destino (sin R3, porque no se ve el contenido). Deben detectarse al menos: redirecciones `>`/`>>`, `tee`, `sed -i`, `perl -i`, `cp`, `mv` (origen y destino), `rm`, `touch`, `truncate`, `dd of=`, `xargs`/`find -exec|-delete` con esos programas (destino desconocido = el directorio actual), `bash -c`/`sh -c`/`eval`, `cd` previo con rutas relativas y scripts de Python/Node/Perl inline o por heredoc que escriben archivos. Leer y escribir fuera de `<UDISTRITAL>` → **permitir**. Comando no analizable dentro de `<UDISTRITAL>` → **confirmar**.
 
+**Límites conocidos** (escrituras que R8 no ve): scripts en archivo (`python3 script.py`, `node x.js`), formateadores y generadores (`prettier --write`, `eslint --fix`, `ng generate`, `nest g`), `git apply`, `git checkout -- <archivo>`/`git restore` y gestores de paquetes. El guardián protege de olvidos de la IA, no de una evasión deliberada; las reglas siguen aplicando aunque el control no lo vea, y el hook de git (H1/H2) cubre el commit.
+
 ### R9 — Commits
 Un commit real en un repo udistrital:
 - sin `commit-oas` usada en la sesión → **bloquear**;
-- con archivos de código preparados (incluidos los de `-a`/`--all`) y sin `seguridad-oas` usada → **bloquear**;
+- con archivos de código preparados (incluidos los de `-a`/`--all`) y sin `seguridad-oas` usada **después del último commit real en ese mismo repo** (o en la sesión, si aún no hubo commits en él) → **bloquear**. Cada commit con código exige su propia revisión; un commit en otro repo no la invalida. `crud-oas`, `mid-oas` y `endpoint-oas` (R2, R3) sí valen para toda la sesión: aportan los lineamientos, no la revisión de un diff;
 - si no, sigue R11 (confirmación).
 Mencionar "git commit" en un texto, `echo` o heredoc **no** es un commit.
 
@@ -67,7 +69,7 @@ Mencionar "git commit" en un texto, `echo` o heredoc **no** es un commit.
 `git push` y `gh pr create` → **bloquear** (los hace el usuario). `git pull`, `git rebase`, `git reset --hard` → **confirmar**. Otros (`status`, `log`, `diff`…) → **permitir**. Igual detección que R9 (texto ≠ comando).
 
 ### R11 — Mensaje de commit
-Si el **mensaje** del commit (`-m`, `--message`, `-F`, heredocs del comando) contiene `Co-Authored-By`, `Claude`, `Anthropic`, `Generated with`, `noreply@anthropic`, 🤖 o las siglas `IA`/`AI`/`LLM` como palabra → **bloquear**. Lo que aparezca fuera del mensaje (rutas como `~/.claude`) no cuenta. Sin atribución → **confirmar**.
+Si el **mensaje** del commit (`-m`, `--message`, `-F`, heredocs del comando) contiene `Co-Authored-By`, `Claude`, `Anthropic`, `Generated with`, `noreply@anthropic`, 🤖 o las siglas `IA`/`AI`/`LLM` como palabra → **bloquear**. Lo que aparezca fuera del mensaje (rutas como `~/.claude`) no cuenta, y dentro del mensaje se quitan antes de validar las rutas `.claude/…` y `CLAUDE.md` (p. ej. `docs: actualiza .claude/docs/02-skills.md`). Sin atribución → **confirmar**.
 
 ### R12 — No saltarse los hooks de git
 `--no-verify` (o `-n` en commit) en commit/push/merge/rebase/am/cherry-pick, o las variables `OAS_HOOKS_OMITIR` u `OAS_PRUEBAS_OMITIR` en el comando → **bloquear**.
@@ -87,7 +89,7 @@ Si el directorio de trabajo está dentro de `<UDISTRITAL>`, agregar al contexto 
 ### A2 — Contexto del proyecto (inicio de sesión, cada mensaje y tras comandos git de la IA)
 Para el repo del directorio de trabajo (y los destinos de `git clone`/`init`/`pull`… que ejecute la IA):
 - Proyecto con código y sin `.claude/CLAUDE.md` + `.claude/docs/` → pedir a la IA que lance el agente `contexto-proyecto` en **MODO generar** (en segundo plano).
-- Con contexto y marca `.claude/.contexto-sync` distinta de `HEAD`: si entre la marca y `HEAD` hay commits de **otros autores** (correo distinto de `git config user.email`) que tocan archivos fuera de `.claude/` → pedir **MODO actualizar** con el rango, la lista de commits y archivos (y, si tocan código, correr `git-hooks/oas_pruebas.py --desde <marca>` y reportar qué falla y de qué autor, sin corregir código ajeno; si el repo tiene `e2e/playwright.config.*` (o `playwright.config.*` en la raíz) y los archivos tocan `src/app/modules/<modulo>/`, `e2e/tests/<modulo>/` o `e2e/<modulo>/`, **sugerir** correr `cd e2e && npx playwright test --grep "@<modulo>"` sin ejecutarlo; `core`, `pages`, `specs` y `tests` no son módulos); si sólo hay commits propios → mover la marca en silencio. Un aviso por sesión y `HEAD`.
+- Con contexto y marca `.claude/.contexto-sync` distinta de `HEAD`: si entre la marca y `HEAD` hay commits de **otros autores** (correo distinto de `git config user.email`) que tocan archivos fuera de `.claude/` → pedir **MODO actualizar** con el rango, la lista de commits y archivos (y, si tocan código, correr `git-hooks/oas_pruebas.py --desde <marca>` y reportar qué falla y de qué autor, sin corregir código ajeno; si el repo tiene `e2e/playwright.config.*` (o `playwright.config.*` en la raíz) y los archivos traídos tocan la interfaz (`src/**` con `.ts .html .scss .css`, `src/assets/i18n/*.json`) o `e2e/` (salvo `e2e/.auth/`, `e2e/node_modules/` y `.env*`), pedir además el agente `impacto-e2e` con `ORIGEN: pull`, el mismo rango, los módulos detectados (`src/app/modules/<modulo>/`, `e2e/tests/<modulo>/`, `e2e/<modulo>/`; `core`, `pages`, `specs` y `tests` no son módulos) y la ruta de la plantilla e2e, en segundo plano y sin aplicar sus propuestas ni correr escenarios sin que el usuario lo pida); si sólo hay commits propios → mover la marca en silencio. Un aviso por sesión y `HEAD`.
 - Sin marca y con contexto → crear la marca en `HEAD` en silencio.
 - Opt-out por repo: archivo `.claude/.contexto-off` (lo crea el usuario).
 
@@ -102,6 +104,12 @@ Estructura exigida:
 - Las tablas derivables de una fuente única se generan con un script registrado en `CLAUDE.md` y van entre `<!-- generado:inicio <comando> -->` y `<!-- generado:fin -->`.
 - Antes de terminar, `scripts/verificar_contexto.py <REPO>` debe pasar (tamaños, enlaces, índice, bloques generados, secretos).
 
+### A4 — Agente `impacto-e2e`
+Dice qué pruebas e2e de un MF quedan afectadas por un cambio y cómo actualizarlas (ver `agents/impacto-e2e.md`). Orígenes: `pull` (lo pide A2), `pr` (desde `code-review-oas`, leyendo el diff con `gh` sin checkout) y `propio` (desde `planificar-issue`, diff contra la base más lo no commiteado).
+- **Sólo lectura**: no edita archivos, no hace operaciones git que cambien el repo y no corre escenarios; lo único que ejecuta es la compilación (`tsc --noEmit` y `playwright test --list`, que no hace login). No lee `.env*` ni `e2e/.auth/`.
+- Cruza las señales del diff (textos, `aria-label`, `formControlName`, columnas, rutas, URLs, i18n, cambios en `e2e/`) con `e2e/pages`, `e2e/tests` y `e2e/specs`, y clasifica: roto, en riesgo, sin cobertura, plan desactualizado.
+- Entrega archivo:línea de la prueba y del cambio, el cambio propuesto, el estado de `e2e/core/` frente a la plantilla y el comando `--grep` de los módulos. Con `pull` agrega a qué autores avisar; con `pr`, comentarios de revisión; con `propio`, la lista de ajustes para el mismo PR.
+
 ## Hooks de git del equipo (cualquier herramienta y personas)
 
 Se instalan como `core.hooksPath` global; sólo validan repos udistrital (dentro de `<UDISTRITAL>` o con remoto `github.com/udistrital`) y después ejecutan el hook propio del repo (`.git/hooks/<hook>`) si existe.
@@ -113,6 +121,6 @@ Se instalan como `core.hooksPath` global; sólo validan repos udistrital (dentro
 - Pruebas relacionadas (`git-hooks/oas_pruebas.py`, sin merge en curso): si `scripts.test` invoca `jest`, corre ese script con `--findRelatedTests <archivos .ts/.js en stage> --passWithNoTests`; en repos Go, `go test` de los paquetes tocados; `ng test` u otros runners se omiten. Fallan → **rechazar** listando los specs; la suite no arranca (`Test suite failed to run` con 0 tests), falta `node_modules` o se superan `OAS_PRUEBAS_TIMEOUT` segundos (180) → **avisar** y permitir. Escape sólo para personas: `OAS_PRUEBAS_OMITIR=1` (R12 lo bloquea para la IA).
 
 ### H2 — commit-msg
-Ignora mensajes que empiezan por `Merge `, `Revert "`, `fixup! `, `squash! `, `amend! `. La primera línea debe cumplir `^(feat|fix|docs|test|refactor|devops|management): \S.*$` y el mensaje completo no puede contener atribución a IA (lista de R11, sin distinguir mayúsculas).
+Ignora mensajes que empiezan por `Merge `, `Revert "`, `fixup! `, `squash! `, `amend! `. La primera línea debe cumplir `^(feat|fix|docs|test|refactor|devops|management): \S.*$` y el mensaje completo no puede contener atribución a IA (lista de R11, sin distinguir mayúsculas, quitando antes las rutas `.claude/…` y `CLAUDE.md`).
 
 Escape **sólo para personas**: `OAS_HOOKS_OMITIR=1 git commit …` (R12 lo bloquea para la IA). Pruebas: `git-hooks/tests/test_git_hooks.sh`.

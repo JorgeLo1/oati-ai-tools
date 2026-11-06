@@ -1,6 +1,7 @@
 ---
 name: planificar-issue
-description: Planifica y conduce una issue de punta a punta (spec-driven) — lee la issue de GitHub, issues relacionadas, mockups adjuntos, el contexto .claude/docs y el código; hace las preguntas de decisión con opciones y una recomendada (respuesta abierta disponible); diseña con /endpoint-oas, /crud-oas y /mid-oas dentro de la especificación (alcance, fuera de alcance, decisiones, criterios → verificación, impacto); arma el plan de tareas por repo (CRUD → MID → MF); y tras la aprobación del usuario ejecuta tarea por tarea invocando la skill de cada una, con /seguridad-oas y /commit-oas en cada commit, y cierra con /documentar-cambios y /doc-issue-oas. Nada se implementa sin aprobación. Úsala cuando el usuario diga "/planificar-issue", "planifica la issue #N", "vamos con la issue", "empecemos la issue", "analiza la issue", "retomemos la issue", o al iniciar cualquier tarea de desarrollo en un repo udistrital.
+description: >-
+  Planifica y conduce una issue de punta a punta (spec-driven) — lee la issue de GitHub, issues relacionadas, mockups adjuntos, el contexto .claude/docs y el código; hace las preguntas de decisión con opciones y una recomendada (respuesta abierta disponible); diseña con /endpoint-oas, /crud-oas y /mid-oas dentro de la especificación (alcance, fuera de alcance, decisiones, criterios → verificación, impacto); arma el plan de tareas por repo (CRUD → MID → MF); y tras la aprobación del usuario ejecuta tarea por tarea invocando la skill de cada una, con /seguridad-oas y /commit-oas en cada commit, y cierra con /documentar-cambios y /doc-issue-oas. Nada se implementa sin aprobación. Úsala cuando el usuario diga "/planificar-issue", "planifica la issue #N", "vamos con la issue", "empecemos la issue", "analiza la issue", "retomemos la issue", o al iniciar cualquier tarea de desarrollo en un repo udistrital.
 ---
 
 # Planificar issue (spec-driven)
@@ -22,6 +23,7 @@ Ninguna línea de código antes de que la especificación y el plan estén **apr
 | 3 | `/mid-oas` (§1, §4, §5) | Servicios del MID: capas, concurrencia, escrituras en varios pasos |
 | 3–4 | `/pruebas-funcionales-oas` (Paso 0, 4, 5) | Escenarios e2e nuevos y existentes afectados, en MF con interfaz |
 | 5 | `/crud-oas`, `/mid-oas`, `/endpoint-oas`, `/pruebas-funcionales-oas` | Implementar cada tarea con las reglas de su skill |
+| 5 | agente `impacto-e2e` (`ORIGEN: propio`) | Al terminar las tareas de interfaz de un MF con `e2e/`: qué page objects, escenarios y planes propios quedan rotos o sin cobertura |
 | 5 | `/seguridad-oas` → `/commit-oas` (fase B) | Antes de cada commit, con confirmación del usuario |
 | 6 | `/documentar-cambios`, `/doc-issue-oas` | Documentar a partir de la especificación |
 
@@ -152,6 +154,7 @@ Completa "Plan de tareas":
 ### Commits
 - <cómo se agrupan: por tarea o por grupo lógico>
 ### Cierre
+- [ ] Impacto e2e revisado con el agente `impacto-e2e` (`ORIGEN: propio`) y sus propuestas aplicadas o descartadas con el usuario (MF con `e2e/`)
 - [ ] Todos los escenarios e2e del módulo en verde (`npx playwright test --grep @<modulo>` desde `e2e/`; completas si cambió `e2e/core` o un page object compartido) e informe de /pruebas-funcionales-oas (si la issue tiene interfaz)
 - [ ] /seguridad-oas sobre el diff de cada repo (incluye la suite completa)
 - [ ] /commit-oas
@@ -173,8 +176,9 @@ Pregunta con `AskUserQuestion` (mencionando el nombre del archivo): `Aprobar pla
 3. Verifica como dice la tarea y reporta el resultado real.
 4. Marca `[x]` en la especificación y avisa en una línea: tarea, verificación, siguiente.
 5. **Desvíos**: si algo cambia alcance, decisiones, diseño o plan, **para**, pregunta (formato de la Fase 2), actualiza la especificación (Decisiones / Diseño técnico / Fuera de alcance / Historial) y sigue. Agregar un repo o cambiar la rama exige `Aprobar cambio de alcance`. Cambios grandes → volver a la Fase 3.
-6. **Commits** (según lo acordado en "Commits"): invoca `/seguridad-oas` sobre el diff, reporta lo introducido por el cambio, y luego `/commit-oas` (fase B) con confirmación. Nunca un commit directo.
-7. Si el usuario pausa, deja la especificación al día (tareas marcadas y siguiente paso en Historial) para retomarla con `/planificar-issue <issue>`.
+6. **Impacto e2e** (MF con `e2e/`, al terminar las tareas de interfaz y antes de la tarea de escenarios o del commit): lanza el agente `impacto-e2e` (en el plugin, `subagent_type: oas:impacto-e2e`) con el prompt `ORIGEN: propio. REPO: <ruta absoluta del MF>. BASE: <rama base, p. ej. develop>. MODULOS: <módulos de la especificación>`. Muestra al usuario lo roto, en riesgo y sin cobertura. Lo que haya que ajustar va en la tarea de escenarios (con `/pruebas-funcionales-oas`) o, si no estaba prevista, es un desvío (punto 5). El agente no edita: los cambios los haces tú, con aprobación.
+7. **Commits** (según lo acordado en "Commits"): invoca `/seguridad-oas` sobre el diff, reporta lo introducido por el cambio, y luego `/commit-oas` (fase B) con confirmación. Nunca un commit directo.
+8. Si el usuario pausa, deja la especificación al día (tareas marcadas y siguiente paso en Historial) para retomarla con `/planificar-issue <issue>`.
 
 ## Fase 6 — Cierre
 

@@ -61,7 +61,8 @@ git commit -m "fix: se realiza ....."
 Reglas del mensaje:
 - Una sola etiqueta: la que describa el cambio predominante. Si el diff mezcla cambios de naturaleza distinta (p. ej. un bug y un feature no relacionados), propone dividirlo en varios commits, cada uno con su etiqueta.
 - Descripción en español, concisa, que explique qué se hizo.
-- Si hay un issue asociado, inclúyelo al final de la descripción (p. ej. `udistrital/sisifo_documentacion#900`).
+- **Primera línea de 72 caracteres o menos** (sin contar la referencia al issue): qué cambió, no cómo. El detalle (por qué, piezas tocadas, versión) va en un **cuerpo** separado por una línea en blanco (segundo `-m` o heredoc), en viñetas cortas.
+- Si hay un issue asociado, inclúyelo al final de la primera línea (p. ej. `udistrital/sisifo_documentacion#900`).
 
 ## 2. Ramas GitFlow (únicas permitidas)
 
@@ -78,8 +79,8 @@ Nombre después del prefijo: en minúsculas, sin espacios ni tildes, con palabra
 ## 3. Validación obligatoria antes de ejecutar
 
 - **Rama**: debe cumplir `^(feature|hotfix)/[a-z0-9][a-z0-9._-]*$` o `^release/[0-9]+\.[0-9]+\.[0-9]+$`, y su base debe ser la correcta (`feature/` y `release/` desde `develop`; `hotfix/` desde `master`).
-- **Commit**: la primera línea debe cumplir `^(feat|fix|docs|test|refactor|devops|management): \S.*$`, y la etiqueta debe corresponder al cambio real del diff.
-- **Sin referencias a Claude/IA**: ni el mensaje completo (todas sus líneas) ni el nombre de la rama pueden coincidir con `(?i)claude|anthropic|co-authored-by|generated with|🤖|\bIA\b|\bAI\b|\bLLM\b`.
+- **Commit**: la primera línea debe cumplir `^(feat|fix|docs|test|refactor|devops|management): \S.*$`, medir 72 caracteres o menos sin la referencia al issue, y la etiqueta debe corresponder al cambio real del diff.
+- **Sin referencias a Claude/IA**: ni el mensaje completo (todas sus líneas) ni el nombre de la rama pueden coincidir con `(?i)claude|anthropic|co-authored-by|generated with|🤖|\bIA\b|\bAI\b|\bLLM\b`. Las rutas de archivos (`.claude/docs/…`, `CLAUDE.md`) se quitan antes de validar: no son atribución.
 
 Si no cumple, corrige la propuesta antes de mostrarla. Nunca ejecutes un comando que no la cumpla.
 
@@ -147,7 +148,10 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
    ```bash
    git add <ruta1> <ruta2> ...
    git commit -m "$(cat <<'EOF'
-   <etiqueta>: <descripción> <org/repo#N>
+   <etiqueta>: <descripción de 72 caracteres o menos> <org/repo#N>
+
+   - <detalle 1: qué y por qué>
+   - <detalle 2>
    EOF
    )"
    git status

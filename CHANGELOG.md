@@ -2,6 +2,19 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.10.0 · 2026-11-06
+
+- **Nuevo agente `impacto-e2e`** (A4). Dice qué page objects, escenarios y planes e2e de un MF rompe o deja en riesgo un cambio, qué pantallas nuevas quedan sin cobertura y cómo ajustarlos, con archivo:línea de la prueba y del cambio. Cruza el diff (plantillas `.html`, componentes, rutas, textos, `aria-label`, `formControlName`, columnas, URLs, i18n) con `e2e/pages`, `e2e/tests` y `e2e/specs`, compila con `tsc --noEmit` y `playwright test --list` y da el comando `--grep`. Es de solo lectura: no edita, no corre escenarios ni lee `.env*` ni `e2e/.auth/`. Tiene tres orígenes:
+  - `pull`: lo pide el aviso de `contexto-proyecto` (A2) en paralelo con el MODO actualizar cuando llegan cambios de otras personas a la interfaz de un MF con `e2e/`. Antes, el aviso solo sugería `--grep` si se tocaba `src/app/modules/<x>/`, y no veía cambios en `pages/`, rutas ni textos de i18n. Indica a qué autores avisar.
+  - `pr`: `/code-review-oas` lo usa para ver si el PR actualizó sus e2e (diff con `gh`, sin checkout) y redacta los hallazgos como comentarios.
+  - `propio`: `/planificar-issue` lo lanza al terminar las tareas de interfaz (paso 6 de la Fase 5 y el cierre del plan). `/pruebas-funcionales-oas` lo cita en el Paso 0 y en la tabla de trabajo en equipo.
+- **R9: `/seguridad-oas` por commit.** Un commit con código exige `/seguridad-oas` después del último commit real en ese mismo repo. Antes, una sola revisión valía para toda la sesión. Un commit en otro repo no la invalida. `crud-oas`, `mid-oas` y `endpoint-oas` siguen valiendo para toda la sesión. Casos C09–C11.
+- **R11/H2: las rutas no son atribución.** `.claude/…` y `CLAUDE.md` se quitan del mensaje antes de buscar `claude`, en `git-guard.py`, en el hook `commit-msg` y en la regla 0.8 de `/commit-oas`. Antes, `docs: actualiza .claude/docs/x.md` quedaba bloqueado. Casos G12b y G12c, y dos pruebas de hooks.
+- **Descripciones de skills que YAML cortaba.** En `planificar-issue`, `doc-issue-oas` y `code-review-oas` el ` #N` sin comillas se leía como comentario y se perdía el final de la descripción, con disparadores como "o al iniciar cualquier tarea de desarrollo". En `code-review-oas` y `release-oas` el `: ` volvía inválido el YAML. Ahora usan `description: >-`, y la de `pruebas-funcionales-oas` baja de 1,3 KB a 0,8 KB.
+- **`/commit-oas`: primera línea de 72 caracteres o menos** (sin la referencia al issue) y el detalle en el cuerpo. Solo en la skill; el hook no lo exige.
+- **Contrato:** R8 lista los límites conocidos del guardián (scripts en archivo, formateadores y generadores, `git apply`, `git checkout --`, gestores de paquetes). A2 y A4 describen el agente nuevo.
+- **Pruebas nuevas:** `scripts/tests/test_frontmatter.py` (descripciones con ` #` o `: ` sin comillas, campos, nombre y carpeta, largo) y `scripts/tests/test_contexto_proyecto.py` (cuándo el aviso pide MODO actualizar e `impacto-e2e`). Las dos corren en `instalar.sh`.
+
 ## 1.9.1 · 2026-11-05
 
 - **`instalar.sh` activa la actualización automática del plugin**: declara el marketplace en `~/.claude/settings.json` (`extraKnownMarketplaces.oas-udistrital.autoUpdate: true`, el mismo ajuste que guarda `/plugin` → Marketplaces → Enable auto-update). Respalda el archivo antes y conserva el origen si el marketplace ya estaba declarado. Si ya está activa no lo toca, y si el JSON no es válido lo informa sin tocarlo. Con `--solo-verificar` solo informa. Antes había que activarla a mano en cada equipo. Para probarlo sobre una copia: `OAS_CLAUDE_SETTINGS=<ruta>`.

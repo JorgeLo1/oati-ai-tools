@@ -1,6 +1,7 @@
 ---
 name: release-oas
-description: Prepara y verifica un release de un microservicio o cliente udistrital según los lineamientos OAS de despliegues, ramas GitFlow y versionado — versión SemVer, rama release/X.Y.Z, Swagger actualizado y su conversión a OpenAPI 2.0 para el registro en WSO2, checklist por ambiente (Drone, variables de entorno, WSO2, pruebas, BD), PR a master y develop, tag de versión, plan de rollback (N y N−1) y limpieza posterior. Es un checklist: no despliega, no hace push, no crea tags ni PR. Úsala cuando el usuario diga "/release-oas", "preparemos el release", "vamos a pasar a pruebas/producción", "qué falta para desplegar", "sube la versión", "pedir registro en WSO2", "rollback".
+description: >-
+  Prepara y verifica un release de un microservicio o cliente udistrital según los lineamientos OAS de despliegues, ramas GitFlow y versionado — versión SemVer, rama release/X.Y.Z, Swagger actualizado y su conversión a OpenAPI 2.0 para el registro en WSO2, checklist por ambiente (Drone, variables de entorno, WSO2, pruebas, BD), PR a master y develop, tag de versión, plan de rollback (N y N−1) y limpieza posterior. Es un checklist: no despliega, no hace push, no crea tags ni PR. Úsala cuando el usuario diga "/release-oas", "preparemos el release", "vamos a pasar a pruebas/producción", "qué falta para desplegar", "sube la versión", "pedir registro en WSO2", "rollback".
 ---
 
 # Release OAS (preparación y verificación de despliegues)

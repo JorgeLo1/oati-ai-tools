@@ -1,6 +1,7 @@
 ---
 name: pruebas-funcionales-oas
-description: Pruebas funcionales y e2e de los MF udistrital (Angular + single-spa) con Playwright, TypeScript y Page Object Model, sobre la skill oficial playwright-cli — instala en el MF la carpeta e2e/ autocontenida desde la plantilla del plugin (core/ genérico con login institucional OIDC/WSO2 por rol, bloqueo automático de escrituras en escenarios @lectura y simulación de respuestas GET; pages/ con los page objects del proyecto), levanta y verifica el stack local (root, MF, APIs), usa usuarios de prueba dedicados desde e2e/.env.e2e (o secrets de Drone) sin que la IA lea sus valores, convierte los criterios de aceptación de la especificación en planes y escenarios (un escenario por archivo, etiquetados por módulo, rol y @lectura/@escritura), actualiza los escenarios que usan una pantalla que cambió, corre y repara los specs, explica cómo verlos en vivo (modo UI, --headed, WSL) y dónde quedan reporte y trazas, y deja evidencias para doc-issue-oas y seguridad-oas, además de la propuesta para funcionamiento y Drone. Úsala cuando el usuario diga "/pruebas-funcionales-oas", "prueba el flujo", "pruebas funcionales", "pruebas e2e", "valida en el navegador", "genera los tests de Playwright", "toma las capturas de la issue", o al cerrar una issue con interfaz.
+description: >-
+  Pruebas funcionales y e2e de los MF udistrital (Angular + single-spa) con Playwright, TypeScript y Page Object Model, sobre la skill playwright-cli — instala en el MF la carpeta e2e/ desde la plantilla del plugin (login OIDC/WSO2 por rol, bloqueo de escrituras en @lectura), levanta el stack local, usa usuarios de prueba de e2e/.env.e2e sin leer sus valores, convierte los criterios de aceptación en planes y escenarios etiquetados por módulo, rol y @lectura/@escritura, actualiza los escenarios de pantallas que cambiaron, corre y repara los specs y deja evidencias para doc-issue-oas. Úsala cuando el usuario diga "/pruebas-funcionales-oas", "prueba el flujo", "pruebas funcionales", "pruebas e2e", "valida en el navegador", "genera los tests de Playwright", "toma las capturas de la issue", o al cerrar una issue con interfaz.
 ---
 
 # Pruebas funcionales OAS (Playwright en los MF)
@@ -15,7 +16,7 @@ La mecánica de Playwright (snapshot, refs, generación de código, plan → gen
 
 1. Issue y especificación (`<UDISTRITAL>/.claude/specs/<repo>-<n>.md`): de su sección **Pruebas E2E** y de la tabla "Criterios de aceptación → verificación" salen los escenarios nuevos y los existentes que hay que ajustar. Sin especificación, pide los criterios al usuario.
 2. MF afectados (por la especificación o el diff) y su módulo: la etiqueta `@<modulo>` y la carpeta `e2e/tests/<modulo>/` usan el **nombre de la carpeta** del módulo en `src/app/modules/` (p. ej. `@plan-mejoramiento`), para que el aviso tras un pull sugiera los escenarios correctos. Los recorridos transversales (menú, login) van en `@navegacion`.
-3. Escenarios existentes afectados: si el MF ya tiene `e2e/`, busca los que usan las pantallas o textos que cambian (`grep -rn "<texto o nombre accesible>" e2e/pages e2e/tests`). Se actualizan en el mismo PR.
+3. Escenarios existentes afectados: si el MF ya tiene `e2e/`, busca los que usan las pantallas o textos que cambian (`grep -rn "<texto o nombre accesible>" e2e/pages e2e/tests`) o, si el cambio ya está hecho, lanza el agente `impacto-e2e` (`ORIGEN: propio`). Se actualizan en el mismo PR.
 4. Herramienta: `playwright-cli --version`. Si no está: `npm install -g @playwright/cli@latest` (con confirmación).
 5. Usuarios de prueba: comprueba que `e2e/.env.e2e` tenga los roles que necesitan los escenarios, **solo los nombres**: `grep -oE '^E2E_[A-Z_]+=' e2e/.env.e2e`. Si falta un rol, usa el login manual del Paso 3.
 
@@ -194,7 +195,8 @@ npm run test:pruebas                       # lo mismo contra el ambiente de prue
 | Tu cambio toca la interfaz (texto, botón, etiqueta, paso del flujo) | Busca en `e2e/pages` y `e2e/tests` lo que lo usa y actualízalo en el mismo PR. Casi siempre basta con el page object. Si el comportamiento cambió a propósito, dilo en el PR |
 | Lo compartido: `core/` y `pages/` usados por varios módulos | Quien los cambia corre **todas** las e2e del MF. `core/` no se cambia por proyecto: la mejora va a la plantilla del plugin |
 | Antes del PR | Corre **todos** los escenarios del módulo (`--grep @<modulo>`), no solo los tuyos. Lo que ya fallaba en la base se reporta aparte |
-| Después de traer cambios de otra persona al módulo | El aviso de `contexto-proyecto` sugiere correr `--grep @<modulo>`; es sugerencia, no obligación |
+| Después de traer cambios de otra persona al módulo | El aviso de `contexto-proyecto` lanza el agente `impacto-e2e`, que cruza lo que llegó con `e2e/pages` y `e2e/tests` y dice qué quedó roto, con el comando `--grep @<modulo>` para comprobarlo. Correrlo es sugerencia, no obligación |
+| Antes de cerrar tus propias tareas de interfaz | Agente `impacto-e2e` con `ORIGEN: propio` (lo lanza `/planificar-issue`): page objects y escenarios a ajustar en el mismo PR |
 | Falla un escenario por el cambio de otra persona | No corrijas su interfaz ni su escenario por tu cuenta: pásale el escenario y la traza, y decide el autor |
 | Roles | Los nombres de `ROLES` son los mismos para todo el equipo; cada persona tiene su `.env.e2e` y sus sesiones en `e2e/.auth/` |
 

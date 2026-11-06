@@ -28,7 +28,7 @@ Funciona completo en **Claude Code** (como plugin) y se puede portar a **otras I
 |---|---|---|
 | **Reglas del equipo** | Flujo de trabajo, reglas de git y disciplina para la IA | [AGENTS.md](AGENTS.md) → se instala en la carpeta udistrital |
 | **11 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación, code review de PR, release y despliegue, pruebas funcionales | [skills/](skills/) |
-| **Agente de contexto** | Genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local) | [agents/](agents/) |
+| **Agentes** | `contexto-proyecto`: genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local). `impacto-e2e`: dice qué pruebas e2e de un MF rompe un cambio y cómo ajustarlas | [agents/](agents/) |
 | **Guardianes (Claude Code)** | Bloquean código sin plan aprobado o sin la skill del dominio, commits sin revisión de seguridad, push/PR, atribución a IA, edición de `.env` | [scripts/](scripts/), [hooks/hooks.json](hooks/hooks.json) |
 | **Hooks de git** | Validan rama GitFlow, etiqueta del commit, atribución a IA, secretos y que pasen las pruebas unitarias relacionadas con lo que commiteas, **en cualquier herramienta** | [git-hooks/](git-hooks/) |
 | **Contrato y pruebas** | Qué debe hacer cada control y sus casos de aceptación; base para portar a otras IAs | [spec/](spec/) |
@@ -237,6 +237,7 @@ Para desactivar los guardianes en un repo puntual, crea el archivo vacío `<repo
 
 - La primera vez que trabajas en un repo sin contexto, el agente genera `.claude/CLAUDE.md` y `.claude/docs/` por módulos (en segundo plano).
 - Cuando traes cambios de otras personas (`git pull`, merge, checkout), el agente actualiza sólo los documentos afectados. Tus propios commits los documentas con `/oas:documentar-cambios`.
+- Si lo que llegó toca la interfaz de un MF con `e2e/`, el agente `impacto-e2e` revisa en paralelo qué page objects y escenarios quedaron rotos o en riesgo, propone el cambio y da el comando `--grep` para comprobarlo. No edita ni corre escenarios. `/oas:code-review-oas` y `/oas:planificar-issue` también lo usan, para el PR de un compañero y para tus propios cambios.
 - Está organizado por **dominios del negocio** con los mismos nombres y números en MF, MID y CRUD (por ejemplo `05-plan-mejoramiento.md` en los tres), y cada dominio enlaza a su equivalente en los otros repos. El índice (`.claude/docs/README.md`) dice qué leer según la tarea.
 - Para llevar un contexto existente a esta estructura: pide *"reorganiza el contexto del proyecto"*.
 - Estado: `python3 ~/oati-ai-tools/scripts/contexto-proyecto.py estado` dentro del repo. Calidad: `python3 ~/oati-ai-tools/scripts/verificar_contexto.py <repo>`.
@@ -276,7 +277,7 @@ Desinstalar: `bash desinstalar.sh`. Las especificaciones y el contexto de cada r
 .claude-plugin/   plugin.json (versión) y marketplace.json
 AGENTS.md         reglas del equipo (fuente única; CLAUDE.md de la plantilla la importa)
 PORTAR.md         instrucciones para portar a otras IAs
-skills/ agents/   skills y agente (formato abierto SKILL.md)
+skills/ agents/   skills y agentes (formato abierto SKILL.md)
 hooks/hooks.json  hooks del plugin de Claude Code
 scripts/          guardianes y avisos (Python, sin dependencias) + tests/run_casos.py
 git-hooks/        hooks de git del equipo + tests/test_git_hooks.sh
@@ -290,6 +291,8 @@ Antes de publicar un cambio:
 ```bash
 python3 scripts/tests/run_casos.py            # casos de los guardianes (spec/casos.json)
 python3 scripts/tests/test_verificar_contexto.py   # verificador de contexto
+python3 scripts/tests/test_contexto_proyecto.py    # aviso de contexto e impacto e2e tras traer cambios
+python3 scripts/tests/test_frontmatter.py          # frontmatter de skills y agentes
 bash git-hooks/tests/test_git_hooks.sh        # hooks de git
 claude plugin validate --strict .             # catálogo
 claude plugin validate --strict .claude-plugin/plugin.json skills agents
