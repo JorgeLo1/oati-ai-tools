@@ -28,7 +28,7 @@ Funciona completo en **Claude Code** (como plugin) y se puede portar a **otras I
 |---|---|---|
 | **Reglas del equipo** | Flujo de trabajo, reglas de git y disciplina para la IA | [AGENTS.md](AGENTS.md) → se instala en la carpeta udistrital |
 | **11 skills** | Planificar issues, commits/ramas OAS, endpoints, CRUD, MID, seguridad, documentación, code review de PR, release y despliegue, pruebas funcionales | [skills/](skills/) |
-| **Agentes** | `contexto-proyecto`: genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local). `impacto-e2e`: dice qué pruebas e2e de un MF rompe un cambio y cómo ajustarlas | [agents/](agents/) |
+| **Agentes** | `contexto-proyecto`: genera y actualiza la documentación de cada repo por módulos (`.claude/docs/`, local). `impacto-e2e`: dice qué pruebas e2e de un MF rompe un cambio y cómo ajustarlas. `antecedentes-issue`: antes de planificar, reúne cómo se ha trabajado el tema (issues relacionadas y sus avances, PR, especificaciones, `sisifo_documentacion`) | [agents/](agents/) |
 | **Guardianes (Claude Code)** | Bloquean código sin plan aprobado o sin la skill del dominio, commits sin revisión de seguridad, push/PR, atribución a IA, edición de `.env` | [scripts/](scripts/), [hooks/hooks.json](hooks/hooks.json) |
 | **Hooks de git** | Validan rama GitFlow, etiqueta del commit, atribución a IA, secretos y que pasen las pruebas unitarias relacionadas con lo que commiteas, **en cualquier herramienta** | [git-hooks/](git-hooks/) |
 | **Contrato y pruebas** | Qué debe hacer cada control y sus casos de aceptación; base para portar a otras IAs | [spec/](spec/) |

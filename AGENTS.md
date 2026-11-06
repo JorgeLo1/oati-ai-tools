@@ -30,6 +30,7 @@ Antes de proponer código, identifica el stack del repo y sigue el patrón de un
 | `release-oas` | Checklist de release y despliegue (versión, Swagger en OpenAPI 2.0 para WSO2, pasos por ambiente, rollback, tag, limpieza); no despliega ni publica |
 | `pruebas-funcionales-oas` | Pruebas funcionales y specs e2e de los MF con Playwright (sobre `playwright-cli`): stack local, sesión por rol, datos, evidencias |
 | agente `contexto-proyecto` | Genera/actualiza el contexto `.claude/docs/` del repo por módulos |
+| agente `antecedentes-issue` | Cómo se ha trabajado antes lo que pide una issue: issues del mismo tema o hito y sus avances, PR, especificaciones anteriores y `sisifo_documentacion`; sólo lectura |
 | agente `impacto-e2e` | Qué page objects y escenarios e2e de un MF rompe o deja sin cobertura un cambio (pull, PR o propio), con el cambio propuesto; sólo lectura |
 
 En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `oas:contexto-proyecto`.

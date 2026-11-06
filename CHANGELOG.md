@@ -2,6 +2,24 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.11.0 · 2026-11-06
+
+- **Nuevo agente `antecedentes-issue`** (A5), de solo lectura. Antes de planificar reúne cómo se ha trabajado lo que pide la issue:
+  - las referencias cruzadas;
+  - las issues del mismo tema y del mismo hito, con sus comentarios "Avances issue";
+  - los archivos (sin el diff) de los PR que cerraron las más cercanas;
+  - las especificaciones anteriores;
+  - y, solo si el tema lo pide, `sisifo_documentacion`: plantillas HTML de informes, guía de backend, arquitectura y migraciones.
+
+  Lo probé con #942 y de esa prueba salieron estos ajustes:
+  - revisa primero si la issue ya tiene PR propios;
+  - filtra los avances aunque no se titulen igual;
+  - si `sisifo_documentacion` está atrasado, lee `origin/main` con `git show`, sin hacer pull;
+  - avisa cuando un clon local está desactualizado.
+
+  Lee hasta 15 candidatas y a fondo solo 5. Cuando las fuentes se contradicen, manda primero el lineamiento OAS y después el código actual. Devuelve el bloque "Antecedentes", lo que corre en paralelo y las contradicciones como preguntas.
+- **`/planificar-issue`:** la Fase 1 lanza el agente en segundo plano y usa su informe para elegir el código de referencia, respetar las decisiones previas y armar las preguntas de la Fase 2. La especificación suma la sección `## Antecedentes`, y los supuestos citan su fuente: issue, PR o especificación.
+
 ## 1.10.1 · 2026-11-06
 
 Ajustes al agente `impacto-e2e` tras probarlo con un pull real en `plan_anual_auditoria_mf` (19 commits, 2 de otras personas).

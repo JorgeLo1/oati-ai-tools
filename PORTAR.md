@@ -26,7 +26,7 @@ Lee completos, en este orden:
 2. [spec/contratos.md](spec/contratos.md) — contrato de cada control (R0–R13), avisos (A1–A3) y hooks de git (H1–H2).
 3. [spec/casos.json](spec/casos.json) — casos de aceptación con la decisión esperada.
 4. `skills/*/SKILL.md` — las 11 skills (formato abierto de Agent Skills: carpeta con `SKILL.md`, cabecera YAML `name` + `description`).
-5. `agents/contexto-proyecto.md` y `agents/impacto-e2e.md` — el agente de contexto y el de impacto en las pruebas e2e.
+5. `agents/contexto-proyecto.md`, `agents/impacto-e2e.md` y `agents/antecedentes-issue.md` — el agente de contexto, el de impacto en las pruebas e2e y el de antecedentes de una issue.
 6. `scripts/` — implementación de referencia (Python 3, sin dependencias externas): `skill-guard.py`, `git-guard.py`, `shell_cmd.py`, `contexto-proyecto.py`, `reglas-udistrital.py`, `oas_config.py`. Su protocolo de entrada/salida es el de hooks de Claude Code (JSON por stdin; salida `hookSpecificOutput.permissionDecision` = `allow|ask|deny`, o `decision: block` en `Stop`).
 
 Comprueba que `instalar.sh` ya corrió (existe `~/.config/oas-ai-tools/config.json` y `git config --global core.hooksPath` apunta a `~/.config/oas-ai-tools/git-hooks`). Si no, pide al usuario que lo ejecute primero: instala los hooks de git y las reglas en `<UDISTRITAL>`, que valen para cualquier herramienta.
@@ -56,6 +56,7 @@ Completa esta tabla para tu herramienta (es el núcleo del plan):
 | 2 | 11 skills | `skills/*/SKILL.md` | Formato nativo de skills, conservando nombre, descripción (es lo que dispara su uso automático) y cuerpo | Comandos/prompt files con el mismo nombre + una regla que liste cuándo usar cada uno (copia la columna "Para qué" de AGENTS.md §2) |
 | 3 | Agente `contexto-proyecto` | `agents/contexto-proyecto.md`, A3 | Subagente/modo con el mismo prompt (incluye la estructura por dominios y la verificación con `scripts/verificar_contexto.py`, que es Python independiente de la herramienta) | Skill/comando `contexto-proyecto` que el usuario o la IA ejecuta en el mismo hilo |
 | 3b | Agente `impacto-e2e` | `agents/impacto-e2e.md`, A4 | Subagente de sólo lectura con el mismo prompt, lanzado por el aviso de A2 y desde `code-review-oas`/`planificar-issue` | Skill/comando `impacto-e2e` que la IA ejecuta cuando el aviso de A2 lo pide |
+| 3c | Agente `antecedentes-issue` | `agents/antecedentes-issue.md`, A5 | Subagente de sólo lectura con el mismo prompt, lanzado por `planificar-issue` en la Fase 1 (necesita `gh` autenticado) | Paso de investigación dentro de `planificar-issue` con el mismo presupuesto |
 | 4 | Guardián de acciones | R0–R13 | Hooks nativos que llamen a los scripts de referencia mediante un **adaptador** (ver Paso 4.3) | Instrucción explícita en las reglas + informe "no controlado" por cada regla |
 | 5 | Guardián de git en la IA | R9–R12 | Hook antes de ejecutar comandos de terminal → `git-guard.py` vía adaptador | Hooks de git (H1–H2, ya instalados) cubren ramas, etiquetas, atribución y secretos; push/PR quedan como instrucción |
 | 6 | Recordatorio de reglas | A1 | Hook al enviar mensaje → `reglas-udistrital.py` | Las reglas globales (componente 1) ya lo cubren |

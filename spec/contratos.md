@@ -110,6 +110,14 @@ Dice qué pruebas e2e de un MF quedan afectadas por un cambio y cómo actualizar
 - Cruza las señales del diff (textos, `aria-label`, `formControlName`, columnas, rutas, URLs, i18n, cambios en `e2e/`) con `e2e/pages`, `e2e/tests` y `e2e/specs`, y clasifica: roto, en riesgo, sin cobertura, plan desactualizado o corregido en `<commit>`. Con `pull`, los cambios traídos son los commits de otros autores **y la resolución de los merges del rango** (`git show --remerge-diff`). Evalúa contra `HEAD`: lo que un commit posterior ya ajustó se reporta como corregido, y no afirma que un commit falta subir sin comprobarlo con `git branch -r --contains`.
 - Entrega archivo:línea de la prueba y del cambio, el cambio propuesto, el estado de `e2e/core/` frente a la plantilla y el comando `--grep` de los módulos. Con `pull` agrega a qué autores avisar; con `pr`, comentarios de revisión; con `propio`, la lista de ajustes para el mismo PR.
 
+### A5 — Agente `antecedentes-issue`
+Reúne cómo se ha trabajado antes lo que pide una issue (ver `agents/antecedentes-issue.md`); lo lanza `planificar-issue` en la Fase 1.
+- **Sólo lectura**: no edita archivos, no comenta ni edita issues o PR y no hace operaciones git que cambien un repo (tampoco `pull` de `sisifo_documentacion`: informa si está atrasado).
+- Fuentes: referencias cruzadas de la issue, issues del mismo tema (búsqueda) y del mismo hito, sus comentarios "Avances issue", los archivos (no el diff) de los PR que cerraron las 2–3 más cercanas, las especificaciones de `<UDISTRITAL>/.claude/specs/` y, sólo según el tema, `sisifo_documentacion` (plantillas, guía de backend, arquitectura, migraciones, despliegue).
+- Presupuesto: hasta 15 candidatas, 5 leídas a fondo, comentarios recortados.
+- Prioridad ante contradicciones: lineamientos OAS → código actual → especificaciones aprobadas → avances de issues → `sisifo_documentacion` → issues viejas. Las afirmaciones decisivas de fuentes viejas se marcan "verificar en el código"; las contradicciones se entregan como preguntas con opción recomendada.
+- Entrega el bloque "Antecedentes" de la especificación con la fuente de cada afirmación, lo que corre en paralelo y lo no encontrado.
+
 ## Hooks de git del equipo (cualquier herramienta y personas)
 
 Se instalan como `core.hooksPath` global; sólo validan repos udistrital (dentro de `<UDISTRITAL>` o con remoto `github.com/udistrital`) y después ejecutan el hook propio del repo (`.git/hooks/<hook>`) si existe.

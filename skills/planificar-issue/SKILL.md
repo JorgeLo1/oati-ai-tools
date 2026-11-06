@@ -17,6 +17,7 @@ Ninguna línea de código antes de que la especificación y el plan estén **apr
 | Fase | Skill / agente | Para qué |
 |---|---|---|
 | 0 | `/commit-oas` (fase A) | Crear la rama si no existe (con confirmación) |
+| 1 | agente `antecedentes-issue` | Cómo se ha trabajado antes el tema: issues relacionadas y sus avances, PR, especificaciones anteriores, `sisifo_documentacion` |
 | 1 | agente `contexto-proyecto` | Generar el contexto de un repo afectado que no lo tenga |
 | 3 | `/endpoint-oas` (modo diseñar) | Rutas nuevas o cambiadas, **dentro de la especificación** |
 | 3 | `/crud-oas` (§1 Modelado, §3) | Colecciones/campos/índices y datos existentes, **dentro de la especificación** |
@@ -66,7 +67,12 @@ actualizado: AAAA-MM-DD
 ## Fase 1 — Investigar (sin preguntar todavía)
 
 - **Issue**: `gh issue view <N> -R <repo> --json title,body,labels,comments,milestone` → descripción, subtareas, criterios de aceptación, DoR/DoD, comentarios (pueden traer cambios de alcance).
-- **Issues relacionadas** mencionadas (diseño, hermanas): léelas igual. Revisa también sus especificaciones en `.claude/specs/`.
+- **Antecedentes**: apenas leas la issue, lanza en segundo plano el agente `antecedentes-issue` (en el plugin, `subagent_type: oas:antecedentes-issue`) con el prompt `ISSUE: <owner/repo>#<N>. UDISTRITAL: <carpeta udistrital>. REPOS: <los que ya veas afectados>. PALABRAS: <términos de dominio de la issue>` y sigue con el resto de la Fase 1 mientras trabaja. Busca issues del mismo tema y del mismo hito y las referencias cruzadas, lee sus "Avances issue" (cómo se implementó), lista los archivos de los PR que las cerraron, revisa especificaciones anteriores y, si el tema lo pide, `sisifo_documentacion` (plantillas HTML de informes, guía de backend, arquitectura, migraciones). Usa su informe así:
+  - "Cómo se ha hecho" y los archivos de los PR → el código de referencia que abres en el punto **Código** (el patrón a seguir).
+  - "Decisiones previas" → se respetan; si la issue las contradice, es una pregunta de la Fase 2.
+  - "Preguntas sugeridas" → candidatas para la Fase 2; "Verificar en el código" → compruébalo antes de convertirlo en supuesto (manda el código actual).
+  - "En paralelo" → riesgo en la especificación y, si comparten archivos, pregunta de agrupación de rama/PR.
+  - Las issues que la issue menciona explícitamente igual se leen: el agente las incluye, pero no esperes a él para leer las que el plan necesita de inmediato.
 - **Mockups/imágenes adjuntas**: descárgalas y míralas:
   ```bash
   curl -sSL -H "Authorization: token $(gh auth token)" -o <scratchpad>/mockup-<n>.png <url de user-attachments>
@@ -79,7 +85,7 @@ actualizado: AAAA-MM-DD
 
 ## Fase 2 — Supuestos y preguntas
 
-1. En texto, lista los **supuestos** tomados del código (con `archivo:línea`) para que el usuario corrija los falsos.
+1. En texto, lista los **supuestos** tomados del código (con `archivo:línea`) y de los antecedentes (con su issue, PR o especificación) para que el usuario corrija los falsos.
 2. Pregunta **sólo lo que cambia el resultado y el código no responde**, con `AskUserQuestion`:
    - Hasta 4 preguntas por llamada; varias rondas si hace falta.
    - 2–4 opciones excluyentes. **La primera es tu recomendación** y termina en `(Recomendado)`; su descripción dice por qué, con evidencia ("el CRUD no tiene el campo `version`; implementarlo exige backend").
@@ -107,6 +113,8 @@ Escribe el archivo (`estado: borrador`):
 
 ## Objetivo
 ## Contexto
+## Antecedentes
+(del agente antecedentes-issue: issues y PR relacionados con lo que aportan, patrones reutilizados, decisiones previas que se respetan, documentos de sisifo_documentacion usados y lo descartado con su motivo)
 ## Alcance
 ## Fuera de alcance
 | Elemento | Motivo | Se reporta en la issue |
