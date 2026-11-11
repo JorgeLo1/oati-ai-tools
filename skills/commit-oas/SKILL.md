@@ -61,8 +61,8 @@ git commit -m "fix: se realiza ....."
 Reglas del mensaje:
 - Una sola etiqueta: la que describa el cambio predominante. Si el diff mezcla cambios de naturaleza distinta (p. ej. un bug y un feature no relacionados), propone dividirlo en varios commits, cada uno con su etiqueta.
 - Descripción en español, concisa, que explique qué se hizo.
-- **Primera línea de 72 caracteres o menos** (sin contar la referencia al issue): qué cambió, no cómo. El detalle (por qué, piezas tocadas, versión) va en un **cuerpo** separado por una línea en blanco (segundo `-m` o heredoc), en viñetas cortas.
-- Si hay un issue asociado, inclúyelo al final de la primera línea (p. ej. `udistrital/sisifo_documentacion#900`).
+- **Una sola línea**, sin cuerpo ni viñetas: `<etiqueta>: <descripción> <org/repo#N>`. La descripción mide 72 caracteres o menos (sin contar la referencia al issue) y dice qué cambió, no cómo. El detalle (por qué, piezas tocadas, versión) va en el **texto del PR** (paso 6 de la Fase B), no en el commit. Es la convención de los equipos: un commit con cuerpo obliga después a reescribir el historial ya subido.
+- Si hay un issue asociado, inclúyelo al final de la línea (p. ej. `udistrital/sisifo_documentacion#900`).
 
 ## 2. Ramas GitFlow (únicas permitidas)
 
@@ -79,7 +79,7 @@ Nombre después del prefijo: en minúsculas, sin espacios ni tildes, con palabra
 ## 3. Validación obligatoria antes de ejecutar
 
 - **Rama**: debe cumplir `^(feature|hotfix)/[a-z0-9][a-z0-9._-]*$` o `^release/[0-9]+\.[0-9]+\.[0-9]+$`, y su base debe ser la correcta (`feature/` y `release/` desde `develop`; `hotfix/` desde `master`).
-- **Commit**: la primera línea debe cumplir `^(feat|fix|docs|test|refactor|devops|management): \S.*$`, medir 72 caracteres o menos sin la referencia al issue, y la etiqueta debe corresponder al cambio real del diff.
+- **Commit**: el mensaje es **una sola línea** (sin `\n`, sin cuerpo), cumple `^(feat|fix|docs|test|refactor|devops|management): \S.*$`, la descripción mide 72 caracteres o menos sin la referencia al issue, y la etiqueta corresponde al cambio real del diff.
 - **Sin referencias a Claude/IA**: ni el mensaje completo (todas sus líneas) ni el nombre de la rama pueden coincidir con `(?i)claude|anthropic|co-authored-by|generated with|🤖|\bIA\b|\bAI\b|\bLLM\b`. Las rutas de archivos (`.claude/docs/…`, `CLAUDE.md`) se quitan antes de validar: no son atribución.
 
 Si no cumple, corrige la propuesta antes de mostrarla. Nunca ejecutes un comando que no la cumpla.
@@ -147,13 +147,7 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
 
    ```bash
    git add <ruta1> <ruta2> ...
-   git commit -m "$(cat <<'EOF'
-   <etiqueta>: <descripción de 72 caracteres o menos> <org/repo#N>
-
-   - <detalle 1: qué y por qué>
-   - <detalle 2>
-   EOF
-   )"
+   git commit -m "<etiqueta>: <descripción de 72 caracteres o menos> <org/repo#N>"
    git status
    git log --oneline -1
    ```
@@ -176,6 +170,14 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
    - Fallos preexistentes (también fallan en la base): <specs o "ninguno"> · Suite que no arranca: <sí/no>
    - Specs agregados/actualizados: <archivos>; tests ajenos ajustados por cambio de contrato: <archivos y motivo, o "ninguno">
    - Pruebas funcionales: `--grep @<modulo>` → <N escenarios: N pasan, N fallan> · informe de /pruebas-funcionales-oas · o "no aplica"
+
+   ## Endpoints nuevos (APIStore / WSO2)
+   <"ninguno"> · o la lista `MÉTODO /ruta` y: «Se adjunta en este PR el swagger en OpenAPI 2.0 para su registro en el APIStore»
    ```
 
    Usa el resultado que obtuvo `/seguridad-oas` en esta sesión; si no lo hay, corre la suite antes de redactarlo. Nunca escribas "pasan" sin haberlo visto.
+
+   **Endpoints nuevos en un CRUD o MID** (rutas nuevas: `@Get`/`@Post`/`@Put`/`@Patch`/`@Delete`/`@Controller` agregados en el diff, o `@router` en Beego): Arquitectura los registra en el APIStore (WSO2) con el swagger en **OpenAPI 2.0**, y lo pide **en el mismo PR** (no por otro canal). Detéctalo con `git diff <base>...HEAD -- src | grep -E '^\+.*@(Get|Post|Put|Patch|Delete|Controller)\('`. Si hay rutas nuevas:
+   - Genera el OpenAPI 2.0 como indica `/release-oas` (Paso 3) y déjalo en el **scratchpad** (`<scratchpad>/<repo>-oas2.json`), **no en el repo**.
+   - Llena la sección «Endpoints nuevos» del texto del PR y dile al usuario que **adjunte ese archivo al PR** (arrastrarlo al cuerpo o a un comentario; `gh` no sube adjuntos).
+   - Campos nuevos en endpoints existentes, o cambios de contenido, no requieren registro: «ninguno».

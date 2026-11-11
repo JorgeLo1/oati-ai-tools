@@ -165,7 +165,8 @@ Completa "Plan de tareas":
 - [ ] Impacto e2e revisado con el agente `impacto-e2e` (`ORIGEN: propio`) y sus propuestas aplicadas o descartadas con el usuario (MF con `e2e/`)
 - [ ] Todos los escenarios e2e del módulo en verde (`npx playwright test --grep @<modulo>` desde `e2e/`; completas si cambió `e2e/core` o un page object compartido) e informe de /pruebas-funcionales-oas (si la issue tiene interfaz)
 - [ ] /seguridad-oas sobre el diff de cada repo (incluye la suite completa)
-- [ ] /commit-oas
+- [ ] /commit-oas (mensajes de una sola línea; el detalle va en el texto del PR)
+- [ ] Endpoints nuevos en CRUD/MID: swagger en OpenAPI 2.0 generado y adjunto en el PR para el APIStore (o «ninguno»)
 - [ ] Criterios de aceptación verificados
 - [ ] /documentar-cambios
 - [ ] /doc-issue-oas (si la issue lo exige)

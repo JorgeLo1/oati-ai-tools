@@ -147,6 +147,7 @@ Reporta resultados reales; si algo falla por causas preexistentes, dilo. Si pued
 2. Archivos creados/modificados.
 3. Resultado de build/lint/test y de la prueba manual.
 4. Consumidores en el MF a actualizar (`grep` de la ruta en `Frontend/`) y recomendación de versión.
+5. **Endpoints nuevos**: si agregaste rutas, genera el swagger en OpenAPI 2.0 en el scratchpad (`/release-oas`, Paso 3) y recuerda que se **adjunta al PR** para el registro en el APIStore (`/endpoint-oas`, «Registro en el APIStore»).
 
 No hagas commits: al terminar sugiere `/commit-oas`.
 

@@ -181,6 +181,7 @@ Si alguno falla por algo preexistente ajeno al cambio, dilo explícitamente. Si 
 3. Resultado de build/lint/test.
 4. Consumidores afectados y recomendación de versión (MINOR si es nuevo, MAJOR si rompe).
 5. Script de datos pendiente para DBA, si aplica.
+6. **Endpoints nuevos** (recurso nuevo o rutas nuevas): genera el swagger en OpenAPI 2.0 en el scratchpad (`/release-oas`, Paso 3) para **adjuntarlo al PR** y registrarlo en el APIStore (`/endpoint-oas`). Un campo nuevo en un recurso existente no lo requiere.
 
 No hagas commits: al terminar sugiere `/commit-oas`.
 

@@ -2,6 +2,15 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.12.0 · 2026-11-11
+
+- **Commits de una sola línea** (`commit-oas`): el mensaje es solo `<etiqueta>: <descripción> <org/repo#N>`, sin cuerpo ni viñetas, y la validación lo exige. El detalle va en el texto del PR. Antes la skill pedía un cuerpo con viñetas, que no es la convención de los equipos, y en #947 hubo que reescribir 6 commits ya subidos.
+- **Endpoints nuevos → OpenAPI 2.0 adjunto en el PR**, a pedido de Arquitectura para registrarlos en el APIStore (WSO2) sin abrir otro canal:
+  - `commit-oas`: el texto del PR gana la sección «Endpoints nuevos (APIStore / WSO2)». Si el diff agrega rutas, se genera el OpenAPI 2.0 en el scratchpad (no en el repo) y el usuario lo adjunta al PR.
+  - `endpoint-oas`, `mid-oas` y `crud-oas` lo recuerdan al terminar. Un campo nuevo en un endpoint existente no requiere registro.
+  - `planificar-issue`: el cierre incluye el adjunto (o «ninguno»).
+  - `release-oas`: el Paso 3 verifica que los PR con rutas nuevas lo traen, en vez de generarlo solo al final.
+
 ## 1.11.0 · 2026-11-06
 
 - **Nuevo agente `antecedentes-issue`** (A5), de solo lectura. Antes de planificar reúne cómo se ha trabajado lo que pide la issue:

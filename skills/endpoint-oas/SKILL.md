@@ -88,7 +88,7 @@ Cada endpoint nuevo o modificado lleva:
 
 En Beego: comentarios `@Title`, `@Description`, `@Param`, `@Success`, `@Failure`, `@router /ruta [verbo]`.
 
-**Registro en WSO2** (complemento de la guía del proyecto): si el endpoint es **nuevo**, para el despliegue hay que pedir su registro a Arquitectura con el enlace del repositorio y el `swagger.json` en **OpenAPI 2.0**. Nest genera OpenAPI 3: la conversión no reemplaza el archivo del framework y se prepara al alistar el release (`/release-oas`). Menciónalo en la salida.
+**Registro en el APIStore (WSO2)**: si el endpoint es **nuevo**, Arquitectura lo registra con el `swagger.json` en **OpenAPI 2.0**, y lo pide **adjunto en el mismo PR** del CRUD o MID que agrega la ruta, no por otro canal ni al final del release. Nest genera OpenAPI 3: la conversión (pasos en `/release-oas`, Paso 3) se hace al terminar la tarea, se deja en el scratchpad (no se commitea ni reemplaza el archivo del framework) y el usuario la adjunta al PR. El texto del PR la anuncia en «Endpoints nuevos (APIStore / WSO2)» (`/commit-oas`). Agregar un campo opcional a un endpoint existente **no** requiere registro. Menciónalo en la salida.
 
 ## Paso 5 — Impacto en consumidores
 
@@ -119,7 +119,8 @@ Reglas OAS: primera salida a producción `0.1.0`; mientras no sea estable se ite
 1. Tabla de endpoints propuestos: `Verbo | Ruta | Params | Query | Body (DTO) | Respuesta Data | Status`.
 2. Justificación breve de cada decisión que no sea obvia (recurso vs. controlador, singular/plural por coherencia).
 3. Recomendación de versión.
-4. Tras confirmación del usuario, implementar (con `/crud-oas` o `/mid-oas` si se trata de un recurso o servicio completo).
+4. **APIStore**: si hay rutas nuevas, la tarea incluye generar el OpenAPI 2.0 y adjuntarlo al PR (Paso 4, «Registro en el APIStore»).
+5. Tras confirmación del usuario, implementar (con `/crud-oas` o `/mid-oas` si se trata de un recurso o servicio completo).
 
 ### Modo revisar
 Tabla `Endpoint | Archivo:línea | Regla incumplida | Severidad | Propuesta` con severidad:

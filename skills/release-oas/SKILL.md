@@ -48,7 +48,7 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
 El lineamiento exige Swagger actualizado en el repo en cada ambiente.
 
 1. Regenera el Swagger del framework (en Nest, al levantar la API o con el script del repo) y verifica que incluya las rutas nuevas o cambiadas del release: `python3 .claude/scripts/generar_endpoints.py src` si el repo tiene contexto, o `grep` de los `@Controller`/`@Get`/… contra `swagger/swagger.json`.
-2. **Entregable para Arquitectura** (complemento de la guía): un JSON en **OpenAPI 2.0 (Swagger 2.0)**. Nest genera OpenAPI 3 (`"openapi": "3.0.0"`), así que hay que convertirlo:
+2. **Entregable para Arquitectura**: un JSON en **OpenAPI 2.0 (Swagger 2.0)**. Arquitectura lo pide **adjunto en cada PR que agrega endpoints** (ver `/commit-oas`, «Endpoints nuevos»): en el release verifica que cada PR con rutas nuevas lo trae y que corresponde al código final; si falta o el contrato cambió, genéralo aquí. Nest genera OpenAPI 3 (`"openapi": "3.0.0"`), así que hay que convertirlo:
    - Usa el convertidor que el equipo haya acordado (p. ej. `api-spec-converter`); no instales paquetes globales ni agregues dependencias al repo sin confirmación. Escribe la salida en el scratchpad o donde el equipo indique: **no reemplaza** el `swagger.json` del framework.
    - Valida el resultado: que tenga `"swagger": "2.0"`, que pase un validador (p. ej. `swagger-cli validate`) y que tenga las **mismas rutas y métodos** que el original. Compáralos con un script corto (`paths` × métodos de ambos archivos) y reporta las diferencias.
    - Revisa a mano lo que la conversión suele perder: `requestBody` con varios tipos de contenido, `oneOf`/`anyOf`, `nullable`, respuestas de archivos (PDF/Excel) y esquemas de seguridad.
@@ -63,7 +63,7 @@ Marca cada ítem con su responsable. **APIs o clientes nuevos** llevan todos los
 | 1 | `.drone.yml` creado o actualizado | Líder o grupo de desarrollo |
 | 2 | Variables de entorno registradas (el lineamiento menciona Tuleap; confirma qué repositorio de variables sigue vigente). Sólo nombres, nunca valores en Git | Líder o grupo de desarrollo |
 | 3 | Solicitud y registro del despliegue en Drone | Desarrollo solicita, Infraestructura registra |
-| 4 | Solicitud de registro en WSO2 y registro (APIs nuevas o endpoints nuevos). Complemento: enviar el enlace del repo, el `swagger.json` en OpenAPI 2.0, el release o commit, el ambiente y la lista de endpoints nuevos; confirmar el registro antes de probar por el gateway | Líder solicita, Arquitectura registra |
+| 4 | Solicitud de registro en WSO2 y registro (APIs nuevas o endpoints nuevos). El `swagger.json` en OpenAPI 2.0 va adjunto en el PR de cada endpoint nuevo (no por otro canal); en el canal del equipo basta el enlace del PR con el release o commit, el ambiente y la lista de endpoints nuevos; confirmar el registro antes de probar por el gateway | Líder solicita, Arquitectura registra |
 | 5 | PR a la rama del ambiente | Líder de desarrollo |
 | 6 | Verificación del PR | Arquitectura |
 | 7 | Pruebas: unitarias (líder de desarrollo), carga (líder de seguridad), funcionales (grupo de soporte), de usuario (centro de servicios) | Según cada tipo |
