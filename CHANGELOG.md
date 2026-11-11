@@ -2,6 +2,10 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.13.1 · 2026-11-11
+
+- **Repos al día por sistema, no adivinados.** En la Fase 0 todavía no se sabe qué repos tocará la issue. Por eso `estado_repos.py --sistema <repo>` agrega todos los hermanos con el mismo prefijo dentro de la carpeta del sistema: `plan_anual_auditoria_mf`, `_mid`, `_crud` y `_cliente`, en `Frontend/` y en `Backend/`, sin repetidos. `/planificar-issue` lee primero solo el texto de la issue (no es código), después actualiza el sistema completo, y recién entonces lee el código y el contexto. Antes, el paso 3 pedía identificar los repos sin haber leído la issue. Los repos compartidos con otro nombre (`plantillas_mid`, `usuario_rol_crud`…) se agregan cuando aparecen. 4 pruebas nuevas, 14 en total.
+
 ## 1.13.0 · 2026-11-11
 
 - **`/planificar-issue` deja al día todos los repos de la issue antes de leer código** (nuevo paso 3 de la Fase 0). Antes podía planificarse con un `develop` viejo, sobre todo en el MID o el CRUD cuando se planificaba desde la carpeta del MF.

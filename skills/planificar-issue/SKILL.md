@@ -16,7 +16,7 @@ Ninguna línea de código antes de que la especificación y el plan estén **apr
 
 | Fase | Skill / agente | Para qué |
 |---|---|---|
-| 0 | `estado_repos.py` + pull con confirmación | Dejar en `develop` y al día **todos** los repos que toca la issue antes de leer su código |
+| 0 | `estado_repos.py --sistema` + pull con confirmación | Dejar en `develop` y al día **todos los repos del sistema** (MF, MID, CRUD) antes de leer código; los compartidos, cuando aparezcan |
 | 0 | `/commit-oas` (fase A) | Crear la rama si no existe (con confirmación) |
 | 1 | agente `antecedentes-issue` | Cómo se ha trabajado antes el tema: issues relacionadas y sus avances, PR, especificaciones anteriores, `sisifo_documentacion` |
 | 1 | agente `contexto-proyecto` | Generar el contexto de un repo afectado que no lo tenga |
@@ -63,22 +63,25 @@ actualizado: AAAA-MM-DD
 
 1. Referencia: `#N` (repo por defecto `udistrital/sisifo_documentacion`), URL o descripción.
 2. Si ya existe la especificación, **retómala**: muestra estado, tareas pendientes y último Historial, y continúa desde la fase que corresponda (haz igual el paso 3 con su `rama:` y sus `repos:`).
-3. **Repos al día (antes de leer código).** Planificar sobre un `develop` viejo produce planes que chocan con lo que ya hicieron otros. Identifica los repos que va a tocar la issue —no sólo el de la carpeta donde estás: si el plan ataca el MID o el CRUD, también esos— y corre:
-   ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/estado_repos.py" [--rama <rama de la issue, si ya existe>] <repo> [<repo> ...]
-   ```
-   Hace `fetch` y dice por repo la acción; no cambia nada. Según lo que reporte:
-   - `ir-a-base` / `actualizar`: propón en **una sola** pregunta (`AskUserQuestion`) dejar esos repos en `develop` y traer los cambios (`git checkout develop && git pull --ff-only origin develop` en cada uno) y, si acepta, ejecútalo. Opciones: `Actualizar todos (Recomendado)` · `Elegir cuáles` · `Planificar con lo local` (queda como riesgo en la especificación).
-   - `ir-a-rama-issue` / `rama-issue` (retomar): cámbiate a la rama de la issue y actualiza `develop` sin salir de ella (`git fetch origin develop:develop`). Si la rama va atrás de `develop`, dilo y pregunta si traes `develop` a la rama (merge); no lo hagas sin respuesta.
-   - `cambios-pendientes`: **para** y pregunta qué hacer con esos archivos (commitearlos con `/commit-oas`, `stash`, o planificar sin cambiar de rama); nunca hagas stash, checkout ni descartes cambios por tu cuenta.
-   - `base-divergente`, `sin-remoto`, `sin-red`, `no-existe`: avisa en una línea y sigue con lo local (o clona el repo que falta); anótalo en "Riesgos y preguntas abiertas".
-   - Tras un pull, el hook de contexto puede pedir el agente `contexto-proyecto` (MODO actualizar) y `impacto-e2e`: lánzalos como indique, así el `.claude/docs` que vas a leer también queda al día.
-   Anota el punto de partida y escríbelo en el Historial cuando crees la especificación (Fase 3), o ya mismo si la estás retomando: `Repos al día: <repo>@<hash de develop>, …` (o el motivo si alguno quedó con lo local).
+3. **Repos al día (antes de leer código o contexto).** Planificar sobre un `develop` viejo produce planes que chocan con lo que ya hicieron otros. Todavía no sabes qué repos tocará la issue, así que no lo adivines: actualiza **el sistema completo**.
+   1. Lee sólo el texto de la issue (`gh issue view <N> -R <repo> --json title,body,labels,milestone`; no es código) para saber de qué sistema y módulo es, y si nombra repos compartidos (p. ej. `plantillas_mid`, `usuario_rol_crud`).
+   2. Corre, con el repo de la carpeta donde estás (o el principal de la issue) como referencia del sistema:
+      ```bash
+      python3 "${CLAUDE_PLUGIN_ROOT}/scripts/estado_repos.py" --sistema <repo> [--rama <rama de la issue, si ya existe>] [<repo compartido> ...]
+      ```
+      `--sistema` agrega solo los hermanos con el mismo prefijo (`plan_anual_auditoria_mf` → `_crud`, `_mid`, `_mf`, `_cliente`), estén en `Frontend/` o en `Backend/`. Al retomar, suma también los de `repos:` de la especificación. El script hace `fetch` y dice la acción de cada repo; no cambia nada.
+   3. Según lo que reporte:
+      - `ir-a-base` / `actualizar`: propón en **una sola** pregunta (`AskUserQuestion`) dejar esos repos en `develop` y traer los cambios (`git checkout develop && git pull --ff-only origin develop` en cada uno) y, si acepta, ejecútalo. Opciones: `Actualizar todos (Recomendado)` · `Elegir cuáles` · `Planificar con lo local` (queda como riesgo en la especificación).
+      - `ir-a-rama-issue` / `rama-issue` (retomar): cámbiate a la rama de la issue y actualiza `develop` sin salir de ella (`git fetch origin develop:develop`). Si la rama va atrás de `develop`, dilo y pregunta si traes `develop` a la rama (merge); no lo hagas sin respuesta.
+      - `cambios-pendientes`: **para** y pregunta qué hacer con esos archivos (commitearlos con `/commit-oas`, `stash`, o planificar sin cambiar de rama); nunca hagas stash, checkout ni descartes cambios por tu cuenta.
+      - `base-divergente`, `sin-remoto`, `sin-red`, `no-existe`: avisa en una línea y sigue con lo local (o clona el repo que falta); anótalo en "Riesgos y preguntas abiertas".
+      - Tras un pull, el hook de contexto puede pedir el agente `contexto-proyecto` (MODO actualizar) y `impacto-e2e`: lánzalos como indique, así el `.claude/docs` que vas a leer también queda al día.
+   4. Anota el punto de partida y escríbelo en el Historial cuando crees la especificación (Fase 3), o ya mismo si la estás retomando: `Repos al día: <repo>@<hash de develop>, …` (o el motivo si alguno quedó con lo local).
 4. Rama: si no existe, invoca `/commit-oas` (fase A) para proponerla y crearla con confirmación; si depende de agrupar issues, decídelo en la Fase 2 y créala antes de la Fase 5. Registra el nombre en `rama:`.
 
 ## Fase 1 — Investigar (sin preguntar todavía)
 
-- **Issue**: `gh issue view <N> -R <repo> --json title,body,labels,comments,milestone` → descripción, subtareas, criterios de aceptación, DoR/DoD, comentarios (pueden traer cambios de alcance).
+- **Issue** (el texto ya lo leíste en la Fase 0; ahora completo, con comentarios): `gh issue view <N> -R <repo> --json title,body,labels,comments,milestone` → descripción, subtareas, criterios de aceptación, DoR/DoD, comentarios (pueden traer cambios de alcance).
 - **Antecedentes**: apenas leas la issue, lanza en segundo plano el agente `antecedentes-issue` (en el plugin, `subagent_type: oas:antecedentes-issue`) con el prompt `ISSUE: <owner/repo>#<N>. UDISTRITAL: <carpeta udistrital>. REPOS: <los que ya veas afectados>. PALABRAS: <términos de dominio de la issue>` y sigue con el resto de la Fase 1 mientras trabaja. Busca issues del mismo tema y del mismo hito y las referencias cruzadas, lee sus "Avances issue" (cómo se implementó), lista los archivos de los PR que las cerraron, revisa especificaciones anteriores y, si el tema lo pide, `sisifo_documentacion` (plantillas HTML de informes, guía de backend, arquitectura, migraciones). Usa su informe así:
   - "Cómo se ha hecho" y los archivos de los PR → el código de referencia que abres en el punto **Código** (el patrón a seguir).
   - "Decisiones previas" → se respetan; si la issue las contradice, es una pregunta de la Fase 2.
@@ -93,7 +96,7 @@ actualizado: AAAA-MM-DD
 - **Contexto**: `.claude/CLAUDE.md` y `.claude/docs/` de cada repo afectado. Si un repo afectado no tiene contexto, lanza el agente `contexto-proyecto` (en el plugin: `oas:contexto-proyecto`) con `MODO: generar. REPO: <repo>. SCRIPT: ${CLAUDE_PLUGIN_ROOT}/scripts/contexto-proyecto.py` y espera.
 - **Código**: componentes/servicios/endpoints a tocar, quién más los usa (compartidos), IDs en `environment`/`config`, y si el **backend ya soporta** lo que piden la issue o el mockup (busca el campo/endpoint en CRUD y MID). Esto decide qué entra y qué no.
 - **Pruebas e2e** (MF con interfaz): ¿el MF tiene `e2e/playwright.config.ts`? Si sí, busca los escenarios y page objects que usan las pantallas, textos o botones que cambia la issue (`grep -rn "<texto o nombre accesible>" e2e/pages e2e/tests`) y lista los planes del módulo (`e2e/specs/`). Si no, anota que habrá que crear `e2e/` desde la plantilla del plugin.
-- **Repos afectados** y orden (CRUD → MID → MF). Si la investigación descubre un repo que no estaba en el paso 3 de la Fase 0 (p. ej. empezaste en el MF y el cambio necesita el MID o el CRUD), **antes de leer su código** córrele `estado_repos.py` y actualízalo igual (misma pregunta), y agrégalo al Historial.
+- **Repos afectados** y orden (CRUD → MID → MF). Los del sistema ya quedaron al día en la Fase 0. Si la investigación descubre un repo **de otro nombre** (un compartido como `plantillas_mid`, `renderizado_plantillas_html` o `usuario_rol_crud`, o de otro sistema), **antes de leer su código** córrele `estado_repos.py <repo>` y actualízalo igual (misma pregunta), y agrégalo al Historial.
 
 ## Fase 2 — Supuestos y preguntas
 

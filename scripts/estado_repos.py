@@ -2,9 +2,14 @@
 """Estado de los repos de una issue antes de planificar o retomar: ¿están en develop y al día con el remoto?
 
 Uso:
-  estado_repos.py [--rama feature/<x>] [--base develop] [--sin-fetch] [--json] <repo> [<repo> ...]
+  estado_repos.py [--sistema <repo>] [--rama feature/<x>] [--base develop] [--sin-fetch] [--json] [<repo> ...]
 
 <repo> es una ruta o un nombre (se busca bajo la carpeta udistrital, ver oas_config.py).
+--sistema <repo> agrega todos los repos hermanos de <repo>: los que comparten su prefijo con otro sufijo de tipo
+(`plan_anual_auditoria_mf` → `plan_anual_auditoria_mf`, `_mid`, `_crud`, `_cliente`), buscados en la carpeta del
+sistema (la primera carpeta bajo la de udistrital, p. ej. SISIFO/, en Frontend/ y Backend/). Así se revisan desde el
+inicio aunque todavía no se sepa cuáles tocará la issue. Los repos compartidos con otro nombre (plantillas_mid,
+usuario_rol_crud…) se agregan nombrándolos.
 Por cada repo: hace `git fetch` del remoto (salvo --sin-fetch), y reporta la rama actual, los cambios sin
 commitear, cuántos commits le faltan a la base local respecto a origin/<base>, si existe la rama de la issue
 (local o remota) y cuánto va atrás de la base, con la acción recomendada. NUNCA cambia de rama, ni hace pull,
@@ -27,6 +32,7 @@ Sale con 0 si todos están al-dia, 1 si alguno requiere acción, 2 si no se pudo
 """
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -34,6 +40,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import oas_config  # noqa: E402
 
 TIMEOUT_FETCH = 30
+RE_TIPO = re.compile(r"^(.+?)_(mf|mid|crud|cliente)(?:_[a-z0-9]+)*$")
 
 
 def git(repo, *args, timeout=15):
@@ -57,6 +64,35 @@ def resolver(nombre):
             return os.path.join(dirpath, base)
         dirnames[:] = [d for d in dirnames if not d.startswith(".") and d != "node_modules"] if nivel < 3 else []
     return None
+
+
+def es_repo(ruta):
+    return os.path.exists(os.path.join(ruta, ".git"))
+
+
+def hermanos(nombre):
+    """Repos del mismo sistema con el mismo prefijo (ordenados: crud, mid, mf, cliente, otros)."""
+    ruta = resolver(nombre)
+    if not ruta:
+        return [nombre]
+    m = RE_TIPO.match(os.path.basename(ruta))
+    if not m:
+        return [ruta]
+    prefijo = m.group(1)
+    raiz = oas_config.udistrital_dir()
+    rel = os.path.relpath(ruta, raiz)
+    sistema = os.path.join(raiz, rel.split(os.sep)[0]) if not rel.startswith("..") and os.sep in rel else os.path.dirname(ruta)
+    encontrados = set()
+    for dirpath, dirnames, _ in os.walk(sistema):
+        nivel = dirpath[len(sistema):].count(os.sep)
+        for d in dirnames:
+            m2 = RE_TIPO.match(d)
+            if m2 and m2.group(1) == prefijo and es_repo(os.path.join(dirpath, d)):
+                encontrados.add(os.path.join(dirpath, d))
+        dirnames[:] = [d for d in dirnames if not d.startswith(".") and d != "node_modules" and not es_repo(os.path.join(dirpath, d))] \
+            if nivel < 2 else []
+    orden = {"crud": 0, "mid": 1, "mf": 2, "cliente": 3}
+    return sorted(encontrados | {ruta}, key=lambda p: (orden.get(RE_TIPO.match(os.path.basename(p)).group(2), 9), p))
 
 
 def contar(repo, rango):
@@ -165,6 +201,10 @@ def main(argv):
             base, rama = (argv[i + 1], rama) if a == "--base" else (base, argv[i + 1])
             i += 2
             continue
+        if a == "--sistema" and i + 1 < len(argv):
+            repos[:0] = hermanos(argv[i + 1])
+            i += 2
+            continue
         if a == "--sin-fetch":
             fetch = False
         elif a == "--json":
@@ -178,7 +218,13 @@ def main(argv):
     if not repos:
         print(__doc__, file=sys.stderr)
         return 2
-    estados = [estado(r, base, rama, fetch) for r in repos]
+    vistos, unicos = set(), []
+    for r in repos:  # sin repetidos (el mismo repo por nombre y por ruta)
+        clave = resolver(r) or r
+        if clave not in vistos:
+            vistos.add(clave)
+            unicos.append(r)
+    estados = [estado(r, base, rama, fetch) for r in unicos]
     if como_json:
         print(json.dumps(estados, ensure_ascii=False, indent=1))
     else:

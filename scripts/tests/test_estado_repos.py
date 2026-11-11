@@ -32,8 +32,8 @@ def clonar(base, origen, nombre):
     return destino
 
 
-def correr(*args):
-    r = subprocess.run(["python3", SCRIPT, "--json", *args], capture_output=True, text=True, env=ENV)
+def correr(*args, env=None):
+    r = subprocess.run(["python3", SCRIPT, "--json", *args], capture_output=True, text=True, env=env or ENV)
     return r.returncode, json.loads(r.stdout) if r.stdout.strip() else []
 
 
@@ -47,6 +47,19 @@ def caso(nombre, args, accion, salida, extra=None):
     print(f"{'✅' if bien else '❌'} {nombre}")
     if not bien:
         print(f"   esperado accion={accion} salida={salida} {extra or ''}; obtenido salida={codigo} {json.dumps(e, ensure_ascii=False)[:500]}")
+
+
+def sistema(nombre, args, env, esperados):
+    global ok, fallos
+    _, estados = correr("--sin-fetch", *args, env=env)
+    u = env["UDISTRITAL_DIR"]
+    obtenidos = [os.path.relpath(e["ruta"], u) for e in estados]
+    bien = obtenidos == esperados
+    ok += bien
+    fallos += not bien
+    print(f"{'✅' if bien else '❌'} {nombre}")
+    if not bien:
+        print(f"   esperado {esperados}\n   obtenido {obtenidos}")
 
 
 def main():
@@ -102,6 +115,25 @@ def main():
         caso("sin remoto origin", [sin_remoto], "sin-remoto", 1)
 
         caso("repo que no existe", [os.path.join(base, "no_existe")], "no-existe", 2)
+
+        # --sistema: hermanos por prefijo dentro de la carpeta del sistema
+        u = os.path.join(base, "udistrital")
+        for rel in ("SIS/Frontend/demo_mf", "SIS/Backend/demo_mid", "SIS/Backend/demo_crud", "SIS/Backend/demo_crud_serverless",
+                    "SIS/Backend/otro_mid", "SIS/Backend/demo", "OTRO/Backend/demo_crud", "raiz_mid", "raiz_crud"):
+            os.makedirs(os.path.dirname(os.path.join(u, rel)), exist_ok=True)
+            git(base, "clone", "-q", remoto, os.path.join(u, rel))
+        env_u = dict(ENV, UDISTRITAL_DIR=u)
+        sistema("--sistema desde el MF trae el MID y el CRUD del mismo sistema (no otro_mid, demo ni OTRO/)",
+                ["--sistema", os.path.join(u, "SIS/Frontend/demo_mf")], env_u,
+                ["SIS/Backend/demo_crud", "SIS/Backend/demo_crud_serverless", "SIS/Backend/demo_mid", "SIS/Frontend/demo_mf"])
+        sistema("--sistema por nombre y un repo compartido extra, sin repetidos",
+                ["--sistema", "demo_mid", "otro_mid", os.path.join(u, "SIS/Backend/demo_mid")], env_u,
+                ["SIS/Backend/demo_crud", "SIS/Backend/demo_crud_serverless", "SIS/Backend/demo_mid", "SIS/Frontend/demo_mf",
+                 "SIS/Backend/otro_mid"])
+        sistema("--sistema con repos en la raíz de udistrital", ["--sistema", os.path.join(u, "raiz_mid")], env_u,
+                ["raiz_crud", "raiz_mid"])
+        sistema("--sistema con un repo sin sufijo de tipo: sólo él", ["--sistema", os.path.join(u, "SIS/Backend/demo")], env_u,
+                ["SIS/Backend/demo"])
     finally:
         shutil.rmtree(base, ignore_errors=True)
     print(f"\n{ok}/{ok + fallos} OK")
