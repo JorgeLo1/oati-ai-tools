@@ -293,6 +293,7 @@ python3 scripts/tests/run_casos.py            # casos de los guardianes (spec/ca
 python3 scripts/tests/test_verificar_contexto.py   # verificador de contexto
 python3 scripts/tests/test_contexto_proyecto.py    # aviso de contexto e impacto e2e tras traer cambios
 python3 scripts/tests/test_frontmatter.py          # frontmatter de skills y agentes
+python3 scripts/tests/test_estado_repos.py         # estado de los repos antes de planificar
 bash git-hooks/tests/test_git_hooks.sh        # hooks de git
 claude plugin validate --strict .             # catálogo
 claude plugin validate --strict .claude-plugin/plugin.json skills agents

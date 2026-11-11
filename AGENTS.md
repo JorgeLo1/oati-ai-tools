@@ -38,6 +38,7 @@ En Claude Code, como plugin, se invocan con prefijo: `/oas:commit-oas`, agente `
 ## 3. Contexto del proyecto
 
 - Si el repo tiene `.claude/CLAUDE.md` y `.claude/docs/`, **léelos** (índice y doc del módulo) antes de tocar un módulo.
+- Antes de planificar o retomar una issue, deja en `develop` y al día (`pull --ff-only`, con confirmación) **cada repo** que toque —también el MID o el CRUD si se planifica desde la carpeta del MF—. `/planificar-issue` lo hace con `scripts/estado_repos.py`; con cambios sin commitear, pregunta antes de cambiar de rama.
 - Si falta el contexto o se trajeron cambios (pull/merge/checkout con commits de otras personas), lanza el agente `contexto-proyecto` antes de seguir. Si llegaron cambios de interfaz a un MF con `e2e/`, lanza también `impacto-e2e` y resume al usuario lo que quedó roto; no corrijas escenarios ni interfaz ajenos sin que el autor lo decida.
 - Al cambiar flujos, estados, endpoints o botones, actualiza el documento correspondiente de `.claude/docs/`.
 - `.claude/` es local: está en `.git/info/exclude` y nunca se commitea.

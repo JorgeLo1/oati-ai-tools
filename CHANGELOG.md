@@ -2,6 +2,16 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.13.0 · 2026-11-11
+
+- **`/planificar-issue` deja al día todos los repos de la issue antes de leer código** (nuevo paso 3 de la Fase 0). Antes podía planificarse con un `develop` viejo, sobre todo en el MID o el CRUD cuando se planificaba desde la carpeta del MF.
+  - El script nuevo `scripts/estado_repos.py` hace `fetch` y dice la acción de cada repo: ir a `develop`, actualizar, ir a la rama de la issue, cambios pendientes, base divergente, sin remoto o sin red. No cambia nada por su cuenta.
+  - La skill propone en una sola pregunta `checkout develop` + `pull --ff-only` para todos. Si hay cambios sin commitear, se detiene.
+  - Al retomar una issue, se cambia a su rama y actualiza `develop` sin salir de ella, y pregunta antes de hacer merge.
+  - Un repo que aparece a mitad de la investigación se actualiza antes de leer su código.
+  - El Historial de la especificación registra `Repos al día: <repo>@<hash>`.
+- AGENTS.md §3 lo incluye como regla para cualquier herramienta. Pruebas en `scripts/tests/test_estado_repos.py`, con un remoto local y 10 casos, que también corren en `instalar.sh`.
+
 ## 1.12.0 · 2026-11-11
 
 - **Commits de una sola línea** (`commit-oas`): el mensaje es solo `<etiqueta>: <descripción> <org/repo#N>`, sin cuerpo ni viñetas, y la validación lo exige. El detalle va en el texto del PR. Antes la skill pedía un cuerpo con viñetas, que no es la convención de los equipos, y en #947 hubo que reescribir 6 commits ya subidos.

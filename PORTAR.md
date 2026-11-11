@@ -27,7 +27,7 @@ Lee completos, en este orden:
 3. [spec/casos.json](spec/casos.json) — casos de aceptación con la decisión esperada.
 4. `skills/*/SKILL.md` — las 11 skills (formato abierto de Agent Skills: carpeta con `SKILL.md`, cabecera YAML `name` + `description`).
 5. `agents/contexto-proyecto.md`, `agents/impacto-e2e.md` y `agents/antecedentes-issue.md` — el agente de contexto, el de impacto en las pruebas e2e y el de antecedentes de una issue.
-6. `scripts/` — implementación de referencia (Python 3, sin dependencias externas): `skill-guard.py`, `git-guard.py`, `shell_cmd.py`, `contexto-proyecto.py`, `reglas-udistrital.py`, `oas_config.py`. Su protocolo de entrada/salida es el de hooks de Claude Code (JSON por stdin; salida `hookSpecificOutput.permissionDecision` = `allow|ask|deny`, o `decision: block` en `Stop`).
+6. `scripts/` — implementación de referencia (Python 3, sin dependencias externas): `skill-guard.py`, `git-guard.py`, `shell_cmd.py`, `contexto-proyecto.py`, `reglas-udistrital.py`, `oas_config.py`, `estado_repos.py` (lo usa `planificar-issue` para dejar los repos al día; es CLI, no hook). Su protocolo de entrada/salida es el de hooks de Claude Code (JSON por stdin; salida `hookSpecificOutput.permissionDecision` = `allow|ask|deny`, o `decision: block` en `Stop`).
 
 Comprueba que `instalar.sh` ya corrió (existe `~/.config/oas-ai-tools/config.json` y `git config --global core.hooksPath` apunta a `~/.config/oas-ai-tools/git-hooks`). Si no, pide al usuario que lo ejecute primero: instala los hooks de git y las reglas en `<UDISTRITAL>`, que valen para cualquier herramienta.
 

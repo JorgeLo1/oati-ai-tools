@@ -276,6 +276,8 @@ if [ "$SIN_PRUEBAS" = 0 ]; then
   else c_er "Verificador de contexto: fallaron pruebas (ver /tmp/oas-test-verif.log)"; fi
   if python3 "$RAIZ_REPO/scripts/tests/test_contexto_proyecto.py" > /tmp/oas-test-ctx.log 2>&1; then c_ok "Aviso de contexto e impacto e2e: $(tail -1 /tmp/oas-test-ctx.log)"
   else c_er "Aviso de contexto e impacto e2e: fallaron pruebas (ver /tmp/oas-test-ctx.log)"; fi
+  if python3 "$RAIZ_REPO/scripts/tests/test_estado_repos.py" > /tmp/oas-test-estado.log 2>&1; then c_ok "Estado de repos antes de planificar: $(tail -1 /tmp/oas-test-estado.log)"
+  else c_er "Estado de repos antes de planificar: fallaron pruebas (ver /tmp/oas-test-estado.log)"; fi
   if python3 "$RAIZ_REPO/scripts/tests/test_frontmatter.py" > /tmp/oas-test-frontmatter.log 2>&1; then c_ok "Frontmatter de skills y agentes: $(tail -1 /tmp/oas-test-frontmatter.log)"
   else c_er "Frontmatter de skills y agentes: errores (ver /tmp/oas-test-frontmatter.log)"; fi
 fi
