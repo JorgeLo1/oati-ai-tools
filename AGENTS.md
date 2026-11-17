@@ -26,6 +26,7 @@ Antes de proponer código, identifica el stack del repo y sigue el patrón de un
 | `seguridad-oas` | Checklist de seguridad OAS sobre el diff antes del commit/PR |
 | `documentar-cambios` | Resumen compartible de la tarea + actualización del contexto del proyecto |
 | `doc-issue-oas` | Comentario "Avances issue" para la issue de GitHub |
+| `informe-actividades-oas` | Informe de actividades del contrato (actividad, producto, link de issue) por rango de fechas, desde tus comentarios "Avances issue" |
 | `code-review-oas` | Code review del PR de un compañero sin descargar sus cambios, con los lineamientos de las demás skills; informe local |
 | `release-oas` | Checklist de release y despliegue (versión, Swagger en OpenAPI 2.0 para WSO2, pasos por ambiente, rollback, tag, limpieza); no despliega ni publica |
 | `pruebas-funcionales-oas` | Pruebas funcionales y specs e2e de los MF con Playwright (sobre `playwright-cli`): stack local, sesión por rol, datos, evidencias |

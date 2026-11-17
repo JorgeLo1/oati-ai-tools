@@ -51,7 +51,7 @@ def skill(nombre):
 
 
 NOMBRES = ("commit-oas", "planificar-issue", "endpoint-oas", "crud-oas", "mid-oas", "seguridad-oas",
-           "documentar-cambios", "doc-issue-oas", "code-review-oas", "release-oas", "pruebas-funcionales-oas", "contexto-proyecto",
+           "documentar-cambios", "doc-issue-oas", "code-review-oas", "release-oas", "pruebas-funcionales-oas", "informe-actividades-oas", "contexto-proyecto",
            "impacto-e2e", "antecedentes-issue")
 _RE_SLASH = re.compile(r"(^|[\s(])/(" + "|".join(NOMBRES) + r")\b")
 _RE_TICK = re.compile(r"`(" + "|".join(NOMBRES) + r")`")
