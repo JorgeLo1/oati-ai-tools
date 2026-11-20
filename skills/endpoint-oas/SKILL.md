@@ -25,6 +25,7 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
    - Nest: `grep -rn "@Controller\|@Get\|@Post\|@Put\|@Patch\|@Delete" src --include=*.controller.ts`
    - Beego: `grep -rn "@router" controllers`
 3. **Regla de coherencia**: el lineamiento pide "ser coherente". Si el repo ya tiene una convención consistente que difiere del ejemplo del lineamiento (p. ej. recursos en **singular** que reflejan la colección `accion_mejora_estado` → `/accion-mejora-estado`, o parámetros `:personaId`), los endpoints **nuevos** siguen la convención del repo y lo mencionas. Nunca propongas renombrar endpoints existentes sin evaluar consumidores (Paso 5) y sin que el usuario lo pida: es un cambio incompatible (MAJOR).
+4. **Sólo en un MID — forma de las lecturas.** Antes de proponer la ruta de una lectura, mira cómo leen las rutas que ya tiene ese MID. Si son planas con filtro (p. ej. `GET /responsable-accion?query=…accion_mejora_id…`), la lectura nueva sigue esa forma (ver «Jerarquía vs. filtro en un MID», Paso 1). Si el MID mezcla las dos formas, no elijas en silencio: preséntalas al usuario (Modo diseñar, punto 2).
 
 ## Paso 1 — Reglas de la URI
 
@@ -40,6 +41,12 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
 | Plural o singular **consistente** en todo el repo | mezcla `/auditorias` y `/plan` | según la convención del repo |
 
 **Acciones de negocio que no son CRUD** (sólo MID): el lineamiento distingue *documentos, colecciones, almacenes y controladores*. Una operación de proceso que no encaja como recurso (generar, firmar, aprobar, exportar, remitir) puede modelarse como **recurso controlador** colgado del recurso afectado y con `POST`: `POST /plan-auditoria/:id/generar-auditorias`, `POST /cargue-masivo/exportar-excel`. Prefiere primero modelarla como recurso (`POST /plan/:id/aprobacion`), y si no, el verbo de negocio en infinitivo — nunca un verbo CRUD.
+
+**Jerarquía vs. filtro en un MID** (sólo MID; los CRUD ya son planos con filtro y no cambian). La jerarquía `/padre/{id}/hijo` es válida en el lineamiento (`/usuarios/2/mascotas`), pero en un MID de SISIFO las lecturas son planas con filtro y el recurso es lo que se pide, no la ruta de acceso a él:
+- Anida sólo las **acciones de negocio sobre un padre** (`POST /plan-mejoramiento/:id/aprobar`) o una relación que ese MID ya anida.
+- Para listar o crear un recurso que pertenece a otro, usa el **recurso plano con el padre como filtro obligatorio** (`GET /comentario-accion?accion_mejora_id=…`; si falta, `400`, porque sin él se listaría todo). En el `POST` el id del padre va en el body.
+- **Nombre completo y no ambiguo.** Al sacar el padre de la ruta se pierde su contexto: `/comentario-accion`, no `/comentario`. Si el MID refleja un recurso del CRUD, usa el mismo nombre.
+- **Un solo estilo** para los nombres de query en una URL, el que ya use el repo (`persona_id`, `accion_mejora_id`); no mezclar `_` y `-`.
 
 **Parámetros de ruta**: sólo identificadores (`:id`, `:planId`). El lineamiento ilustra `{usuario-id}`; en Nest usa el estilo que ya tenga el repo (`:personaId`). Valida ObjectId en el CRUD (pipe `ParseObjectIdPipe` o equivalente).
 
@@ -117,7 +124,7 @@ Reglas OAS: primera salida a producción `0.1.0`; mientras no sea estable se ite
 
 ### Modo diseñar
 1. Tabla de endpoints propuestos: `Verbo | Ruta | Params | Query | Body (DTO) | Respuesta Data | Status`.
-2. Justificación breve de cada decisión que no sea obvia (recurso vs. controlador, singular/plural por coherencia).
+2. Justificación breve de cada decisión que no sea obvia (recurso vs. controlador, singular/plural por coherencia). Si en un MID hay una forma anidada y una plana con filtro, válidas las dos (Paso 1), **preséntalas juntas con su costo, recomienda la plana y pregunta al usuario** (`AskUserQuestion`) antes de dar la ruta por definida.
 3. Recomendación de versión.
 4. **APIStore**: si hay rutas nuevas, la tarea incluye generar el OpenAPI 2.0 y adjuntarlo al PR (Paso 4, «Registro en el APIStore»).
 5. Tras confirmación del usuario, implementar (con `/crud-oas` o `/mid-oas` si se trata de un recurso o servicio completo).

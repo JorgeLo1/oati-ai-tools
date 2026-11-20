@@ -2,6 +2,10 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.14.1 · 2026-11-19
+
+- **`endpoint-oas`: en un MID, las lecturas van planas con filtro.** Un revisor objetó `GET /accion-mejora/{accionId}/comentario` (issue #948): el id en medio de la ruta y un recurso (`comentario`) que aparecía después. El lineamiento permite la jerarquía, pero los MID de SISIFO leen con rutas planas (`responsable-accion?…accion_mejora_id…`) y el CRUD de comentarios ya era plano. Ahora la skill: (1) pide mirar cómo lee el MID antes de proponer la ruta; (2) anida sólo acciones de negocio sobre un padre; (3) para listar o crear un recurso que pertenece a otro usa el recurso plano con el padre como filtro obligatorio (`400` si falta) y con nombre completo (`/comentario-accion`, no `/comentario`); (4) pide un solo estilo de nombres de query en la URL; (5) en modo diseñar presenta las dos formas y pregunta al usuario. `planificar-issue` lleva esa elección a «Decisiones». No cambia nada en los CRUD.
+
 ## 1.14.0 · 2026-11-16
 
 - **Nueva skill `informe-actividades-oas`.** Arma el informe de actividades del contrato para un rango de fechas. Toma solo las issues de `sisifo_documentacion` donde la persona dejó comentarios "Avances issue" en el rango (una issue solo asignada o con cambio de estado no cuenta). Las clasifica en las actividades específicas del contrato únicamente cuando encajan de forma directa, y entrega por actividad la actividad realizada, el producto asociado y el link de la issue. Es de solo lectura: no comenta ni modifica issues. Las actividades del contrato las pasa el usuario y quedan guardadas en `~/docs-issues/actividades-contrato.md`.
