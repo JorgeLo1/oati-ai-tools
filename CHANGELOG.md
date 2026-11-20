@@ -2,6 +2,10 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.14.2 · 2026-11-19
+
+- **`endpoint-oas`: la forma plana con filtro es lineamiento para CRUD y MID, no una preferencia del MID.** En 1.14.1 la regla se limitó al MID y se presentaba como opción. Ahora es regla para los dos: un recurso que pertenece a otro va plano con el padre como filtro (`GET /comentario-accion?accion_mejora_id=…`), el id del padre va en el body del `POST`, y `/padre/{id}/hijo` no se usa para listar ni crear (solo las acciones de negocio sobre un padre se anidan). Si el usuario pide la forma anidada, la skill avisa que contradice el lineamiento; al revisar, una ruta anidada así se reporta con severidad Media. `planificar-issue` lleva cualquier otra forma a «Decisiones».
+
 ## 1.14.1 · 2026-11-19
 
 - **`endpoint-oas`: en un MID, las lecturas van planas con filtro.** Un revisor objetó `GET /accion-mejora/{accionId}/comentario` (issue #948): el id en medio de la ruta y un recurso (`comentario`) que aparecía después. El lineamiento permite la jerarquía, pero los MID de SISIFO leen con rutas planas (`responsable-accion?…accion_mejora_id…`) y el CRUD de comentarios ya era plano. Ahora la skill: (1) pide mirar cómo lee el MID antes de proponer la ruta; (2) anida sólo acciones de negocio sobre un padre; (3) para listar o crear un recurso que pertenece a otro usa el recurso plano con el padre como filtro obligatorio (`400` si falta) y con nombre completo (`/comentario-accion`, no `/comentario`); (4) pide un solo estilo de nombres de query en la URL; (5) en modo diseñar presenta las dos formas y pregunta al usuario. `planificar-issue` lleva esa elección a «Decisiones». No cambia nada en los CRUD.

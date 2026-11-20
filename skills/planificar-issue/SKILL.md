@@ -115,7 +115,7 @@ actualizado: AAAA-MM-DD
 
 **Diseño con las skills de dominio** (sólo si la issue toca backend; aquí no se implementa nada):
 
-- Rutas nuevas o cambiadas → invoca `/endpoint-oas` en modo **diseñar**; su tabla, consumidores y versión van a "Diseño técnico → Endpoints". Si en un MID hay dos formas válidas de la ruta (anidada o plana con filtro), se pregunta al usuario y la elección va a "Decisiones" con la alternativa descartada.
+- Rutas nuevas o cambiadas → invoca `/endpoint-oas` en modo **diseñar**; su tabla, consumidores y versión van a "Diseño técnico → Endpoints". Un recurso que pertenece a otro va plano con el padre como filtro (CRUD y MID); si se propone otra forma, va a "Decisiones" con la razón.
 - Colecciones/tablas o campos → invoca `/crud-oas` y aplica **sólo** §1 (Modelado) y §3 (modificar existente); van a "Diseño técnico → Modelo de datos".
 - Lógica en el MID → invoca `/mid-oas` y aplica §1, §4 y §5; va a "Diseño técnico → MID".
 - Issue con interfaz en un MF → invoca `/pruebas-funcionales-oas` y aplica el Paso 0 y las reglas de los Pasos 4 y 5; va a "Pruebas E2E": qué criterios se automatizan (escenarios nuevos, con rol y `@lectura`/`@escritura`/`@simulado`), qué escenarios o page objects existentes se ajustan porque cambia la pantalla, los datos semilla, y si hay que crear `e2e/` en el MF. Lo que no se automatiza (p. ej. escrituras sin limpieza posible) va a "Fuera de alcance" con su motivo.
