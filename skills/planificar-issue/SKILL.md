@@ -69,7 +69,7 @@ actualizado: AAAA-MM-DD
       ```bash
       python3 "${CLAUDE_PLUGIN_ROOT}/scripts/estado_repos.py" --sistema <repo> [--rama <rama de la issue, si ya existe>] [<repo compartido> ...]
       ```
-      `--sistema` agrega solo los hermanos con el mismo prefijo (`plan_anual_auditoria_mf` → `_crud`, `_mid`, `_mf`, `_cliente`), estén en `Frontend/` o en `Backend/`. Al retomar, suma también los de `repos:` de la especificación. El script hace `fetch` y dice la acción de cada repo; no cambia nada.
+      La línea «GitHub:» de cada repo dice qué exige para fusionar (Drone en `develop`, PR y aprobaciones en `master`) y avisa si la rama actual no se podrá subir por su nombre; si el plan depende de fusionar a tiempo, anótalo en «Riesgos». `--sistema` agrega solo los hermanos con el mismo prefijo (`plan_anual_auditoria_mf` → `_crud`, `_mid`, `_mf`, `_cliente`), estén en `Frontend/` o en `Backend/`. Al retomar, suma también los de `repos:` de la especificación. El script hace `fetch` y dice la acción de cada repo; no cambia nada.
    3. Según lo que reporte:
       - `ir-a-base` / `actualizar`: propón en **una sola** pregunta (`AskUserQuestion`) dejar esos repos en `develop` y traer los cambios (`git checkout develop && git pull --ff-only origin develop` en cada uno) y, si acepta, ejecútalo. Opciones: `Actualizar todos (Recomendado)` · `Elegir cuáles` · `Planificar con lo local` (queda como riesgo en la especificación).
       - `ir-a-rama-issue` / `rama-issue` (retomar): cámbiate a la rama de la issue y actualiza `develop` sin salir de ella (`git fetch origin develop:develop`). Si la rama va atrás de `develop`, dilo y pregunta si traes `develop` a la rama (merge); no lo hagas sin respuesta.

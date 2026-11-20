@@ -75,6 +75,7 @@ Una tarea que abarca varios repos aplica cada skill en el repo que corresponde.
 
 ## 6. Git (reglas no negociables)
 
+- **Reglas de GitHub (rulesets)**: muchos repos backend y algunos clientes las tienen; varían por repo, así que se consultan (`scripts/estado_repos.py <repo>` o `gh api repos/<owner>/<repo>/rules/branches/<rama>`), no se suponen. Las vigentes: ramas fuera de `feature/**`, `hotfix/**`, `release/**`, `develop`, `master` (o con más de un nivel, como `feature/a/b`) **no se pueden crear ni subir**; `develop` no se borra y, con `develop-requires-green-ci`, exige Drone (`continuous-integration/drone/push`) en verde; `release/*` exige Drone en verde; `master` exige PR con 1 aprobación, Drone en verde, sin force-push ni borrado.
 - Ramas: sólo `feature/<nombre>` (desde develop), `hotfix/<nombre>` (desde master), `release/X.Y.Z`; nombres en minúsculas con guiones. Nada de `fix/`, `bugfix/`, `feat/`, `chore/`…
 - Commits: primera línea `<etiqueta>: <descripción en español>`, con etiqueta `feat`, `fix`, `docs`, `test`, `refactor`, `devops` o `management`; issue al final si aplica (`udistrital/sisifo_documentacion#900`).
 - **Prohibido** en commits, ramas, PR y tags: `Co-Authored-By`, "Generated with…", 🤖 o cualquier mención a Claude, Anthropic, IA, AI o LLM. El autor es siempre el usuario configurado en git.

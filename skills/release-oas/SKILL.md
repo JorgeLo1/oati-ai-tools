@@ -82,8 +82,15 @@ Prerrequisitos de producción (lineamiento): Swagger actualizado, refactor de AP
 
 Comandos que ejecuta el Maintainer (sólo muéstralos):
 
+Antes de abrir los PR, revisa las reglas de GitHub del repo (rulesets; varían por repo): `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/estado_repos.py" <repo>` (línea «GitHub:») o `gh api repos/<owner>/<repo>/rules/branches/<rama>`. En los repos con rulesets:
+
+- [ ] Drone (`continuous-integration/drone/push`) en verde en `release/X.Y.Z` (`gh api repos/<owner>/<repo>/commits/release/X.Y.Z/status -q .state` → `success`): `release/*` lo exige.
+- [ ] PR a `master` con **1 aprobación** y Drone en verde: no hay push directo ni force-push a `master`, ni se puede borrar.
+- [ ] PR a `develop`: si el repo tiene `develop-requires-green-ci`, también Drone en verde.
+- [ ] Igual para un `hotfix/` hacia `master` (PR, aprobación y CI).
+
 ```bash
-# PR release/X.Y.Z → master y release/X.Y.Z → develop (en GitHub)
+# PR release/X.Y.Z → master y release/X.Y.Z → develop (en GitHub, con la aprobación y el CI que exijan las reglas)
 git checkout master && git pull --ff-only
 git tag -a <vX.Y.Z según el formato del repo> -m "<descripción del release>"
 git push origin <tag>

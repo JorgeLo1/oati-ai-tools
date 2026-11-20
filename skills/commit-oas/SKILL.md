@@ -99,7 +99,7 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
 2. Decide:
    - Si ya está en una rama `feature/*` o `hotfix/*` válida y coherente con la tarea, continúa en ella sin crear otra.
    - Si está en `develop`, `master`, `release/*` o una rama no relacionada, propone crear una nueva.
-   - Si está en una rama con un nombre que **no cumple** el lineamiento (p. ej. `fix/...`), adviértelo y propone una rama válida para el trabajo nuevo.
+   - Si está en una rama con un nombre que **no cumple** el lineamiento (p. ej. `fix/...`), adviértelo y propone una rama válida para el trabajo nuevo. En los repos con el ruleset `branch-naming` de GitHub, esa rama **no se puede subir** (GitHub rechaza crear o actualizar ramas fuera de `feature/`, `hotfix/`, `release/`, `develop`, `master`, y también nombres con más de un nivel como `feature/a/b`): si ya tiene trabajo, propone renombrarla con `git branch -m <rama válida>` antes de seguir.
    - Si hay cambios sin commitear que no son de esta tarea, avisa antes de cambiar de rama y pregunta qué hacer (commitearlos con la Fase B, dejarlos o hacer stash). No lo decidas tú.
 
 3. Determina el tipo de rama:
@@ -135,7 +135,7 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
 
 2. Verifica la rama:
    - En `develop` o `master` **no se commitea**. Propone primero crear la rama válida (`git checkout -b feature/<nombre>` conserva los cambios sin commitear).
-   - Si la rama actual no cumple el lineamiento, adviértelo y propone moverse a una rama válida antes del commit.
+   - Si la rama actual no cumple el lineamiento, adviértelo y propone renombrarla (`git branch -m <rama válida>`, conserva commits y cambios) antes del commit: con el ruleset `branch-naming` GitHub rechazaría el push.
 
 3. Propón en un solo mensaje breve:
    - **Archivos a agregar**: lista explícita de rutas (`git add <rutas>`, no `git add .` ni `-A`).
@@ -157,6 +157,10 @@ Se ejecuta **antes de tocar cualquier archivo**, cuando el usuario pide una nuev
 
 5. Cierre: informa la rama, el hash y el mensaje del commit. Ofrece, sin ejecutar:
    - `git push -u origin <rama>` y un Pull Request: `feature/` hacia `develop`; `hotfix/` hacia `master` y `develop`; `release/` hacia `master` y `develop`.
+   - **Qué exigirá GitHub para fusionar** (rulesets: varían por repo, se consultan con `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/estado_repos.py" <repo>` (línea «GitHub:») o `gh api repos/<owner>/<repo>/rules/branches/<rama>`):
+     - `develop` con el ruleset `develop-requires-green-ci`: el PR sólo se fusiona con Drone (`continuous-integration/drone/push`) en verde sobre el último commit. Con `develop-protection` sólo se impide borrar `develop`.
+     - `master`: PR con **1 aprobación**, Drone en verde, sin force-push ni borrado. `release/*`: Drone en verde.
+     - Después del push, el estado de Drone de la rama: `gh api repos/<owner>/<repo>/commits/<rama>/status -q .state` (`success`, `pending`, `failure`). Si falla, revisa el pipeline antes de pedir revisión.
    - Recordatorio del lineamiento de limpieza: eliminar la rama una vez integrada a la línea base.
 
 6. **Texto del PR** (cuando lo pida el usuario o al cerrar la tarea). Mientras el pipeline no ejecute las pruebas, se recomienda que el PR lleve la evidencia (`AGENTS.md` §8). Inclúyela si se corrieron pruebas en la sesión; si no, deja la sección con lo que falte por correr en vez de inventarlo:

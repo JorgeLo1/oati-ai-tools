@@ -2,7 +2,7 @@
 """Estado de los repos de una issue antes de planificar o retomar: ¿están en develop y al día con el remoto?
 
 Uso:
-  estado_repos.py [--sistema <repo>] [--rama feature/<x>] [--base develop] [--sin-fetch] [--json] [<repo> ...]
+  estado_repos.py [--sistema <repo>] [--rama feature/<x>] [--base develop] [--sin-fetch] [--sin-github] [--json] [<repo> ...]
 
 <repo> es una ruta o un nombre (se busca bajo la carpeta udistrital, ver oas_config.py).
 --sistema <repo> agrega todos los repos hermanos de <repo>: los que comparten su prefijo con otro sufijo de tipo
@@ -14,6 +14,11 @@ Por cada repo: hace `git fetch` del remoto (salvo --sin-fetch), y reporta la ram
 commitear, cuántos commits le faltan a la base local respecto a origin/<base>, si existe la rama de la issue
 (local o remota) y cuánto va atrás de la base, con la acción recomendada. NUNCA cambia de rama, ni hace pull,
 merge, stash o commit: eso lo propone la IA y lo confirma el usuario.
+
+Protecciones de GitHub (rulesets; con `gh`, salvo --sin-fetch o --sin-github): para repos de github.com consulta las
+reglas efectivas de <base>, de master y de la rama actual (`gh api repos/<owner>/<repo>/rules/branches/<rama>`) y dice
+si <base> exige Drone en verde, si master exige PR con aprobaciones y si la rama actual no se puede subir por su nombre
+(ruleset branch-naming). Varían por repo: se consultan, no se suponen.
 
 Acciones posibles:
   al-dia             en <base>, sin cambios y sin commits por traer
@@ -95,6 +100,42 @@ def hermanos(nombre):
     return sorted(encontrados | {ruta}, key=lambda p: (orden.get(RE_TIPO.match(os.path.basename(p)).group(2), 9), p))
 
 
+def slug_github(ruta):
+    """owner/repo si el remoto origin es de github.com, si no None."""
+    c, url, _ = git(ruta, "remote", "get-url", "origin")
+    m = re.match(r"^(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)([^/]+/[^/]+?)(?:\.git)?/?$", url) if c == 0 else None
+    return m.group(1) if m else None
+
+
+def reglas_rama(slug, rama):
+    """Lista de reglas efectivas de GitHub para `rama`, o None si no se pudo consultar."""
+    try:
+        r = subprocess.run(["gh", "api", f"repos/{slug}/rules/branches/{rama}"], capture_output=True, text=True, timeout=20)
+        return json.loads(r.stdout) if r.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def resumir_reglas(base, reglas_base, reglas_master, reglas_actual):
+    """Resumen de las protecciones (función pura, la usan las pruebas)."""
+    def checks(reglas):
+        return sorted({c.get("context") for r in reglas or [] if r.get("type") == "required_status_checks"
+                       for c in (r.get("parameters") or {}).get("required_status_checks", [])})
+
+    def aprobaciones(reglas):
+        prs = [r for r in reglas or [] if r.get("type") == "pull_request"]
+        return max(((p.get("parameters") or {}).get("required_approving_review_count", 0) for p in prs), default=None)
+
+    tipos_actual = {r.get("type") for r in reglas_actual or []}
+    return {
+        f"{base}_ci": checks(reglas_base),
+        f"{base}_pr_aprobaciones": aprobaciones(reglas_base),
+        "master_ci": checks(reglas_master),
+        "master_pr_aprobaciones": aprobaciones(reglas_master),
+        "rama_actual_bloqueada": bool(tipos_actual & {"creation", "update"}),
+    }
+
+
 def contar(repo, rango):
     c, out, _ = git(repo, "rev-list", "--count", rango)
     return int(out) if c == 0 and out.isdigit() else None
@@ -104,7 +145,7 @@ def existe_ref(repo, ref):
     return git(repo, "rev-parse", "--verify", "-q", ref)[0] == 0
 
 
-def estado(nombre, base, rama_issue, fetch):
+def estado(nombre, base, rama_issue, fetch, github=True):
     ruta = resolver(nombre)
     e = {"repo": os.path.basename(nombre.rstrip("/")), "ruta": ruta, "base": base}
     if not ruta or git(ruta, "rev-parse", "--is-inside-work-tree")[1] != "true":
@@ -135,6 +176,13 @@ def estado(nombre, base, rama_issue, fetch):
         ref = rama_issue if e["rama_issue_local"] else f"origin/{rama_issue}" if e["rama_issue_remota"] else None
         if ref and e["base_remota"]:
             e["rama_issue_atras"] = contar(ruta, f"{ref}..{remota}")
+
+    slug = slug_github(ruta) if fetch and github else None
+    if slug:
+        rb, rm = reglas_rama(slug, base), reglas_rama(slug, "master")
+        ra = reglas_rama(slug, e["rama"]) if e["rama"] not in (base, "master", "(HEAD separado)") else []
+        e["github"] = slug
+        e["protecciones"] = resumir_reglas(base, rb, rm, ra) if rb is not None and rm is not None else None
 
     if e["cambios"]:
         e["accion"] = "cambios-pendientes"
@@ -186,6 +234,25 @@ def texto(e):
             det.append(f"rama de la issue {e['rama_issue']}: {donde}{extra}")
         det.append(f"fetch {e['fetch']}")
         linea.append("  " + " · ".join(det))
+        if "protecciones" in e:
+            p = e["protecciones"]
+            if p is None:
+                linea.append("  GitHub: no se pudieron leer las reglas (gh sin sesión o sin red)")
+            else:
+                b = e["base"]
+                partes = [f"{b} exige {', '.join(p[b + '_ci'])}" if p[b + "_ci"] else f"{b} sin CI obligatoria"]
+                if p[b + "_pr_aprobaciones"] is not None:
+                    partes.append(f"{b} exige PR ({p[b + '_pr_aprobaciones']} aprob.)")
+                m = []
+                if p["master_pr_aprobaciones"] is not None:
+                    m.append(f"PR con {p['master_pr_aprobaciones']} aprob.")
+                if p["master_ci"]:
+                    m.append(", ".join(p["master_ci"]))
+                partes.append("master: " + (" + ".join(m) if m else "sin reglas"))
+                linea.append("  GitHub: " + " · ".join(partes))
+                if p["rama_actual_bloqueada"]:
+                    linea.append(f"  ⚠ GitHub rechaza crear o subir la rama `{e['rama']}` por su nombre (ruleset branch-naming): "
+                                 "renómbrala a feature/… o hotfix/… antes de commitear (`git branch -m`).")
         if e["cambios_muestra"]:
             linea.append("  cambios: " + ", ".join(e["cambios_muestra"]) + (" …" if e["cambios"] > len(e["cambios_muestra"]) else ""))
     linea.append("  → " + SUGERENCIA[e["accion"]].format(ruta=e.get("ruta") or e["repo"], base=e["base"], rama=e.get("rama_issue", "")))
@@ -193,7 +260,7 @@ def texto(e):
 
 
 def main(argv):
-    base, rama, fetch, como_json, repos = "develop", None, True, False, []
+    base, rama, fetch, github, como_json, repos = "develop", None, True, True, False, []
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -207,6 +274,8 @@ def main(argv):
             continue
         if a == "--sin-fetch":
             fetch = False
+        elif a == "--sin-github":
+            github = False
         elif a == "--json":
             como_json = True
         elif a in ("-h", "--help"):
@@ -224,7 +293,7 @@ def main(argv):
         if clave not in vistos:
             vistos.add(clave)
             unicos.append(r)
-    estados = [estado(r, base, rama, fetch) for r in unicos]
+    estados = [estado(r, base, rama, fetch, github) for r in unicos]
     if como_json:
         print(json.dumps(estados, ensure_ascii=False, indent=1))
     else:

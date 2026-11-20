@@ -2,6 +2,22 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.15.0 · 2026-11-20
+
+Las reglas de GitHub (rulesets) que tienen los repos udistrital ya entran en el flujo. Las validé con `rules/branches` sobre `plan_anual_auditoria_mid` (variante `develop-protection`) y `gestion_contractual_crud` (variante `develop-requires-green-ci`):
+- `branch-naming` bloquea crear o subir ramas fuera de `feature/**`, `hotfix/**`, `release/**`, `develop` y `master`. También bloquea las de más de un nivel, como `feature/a/b` y `dependabot/npm_and_yarn/…`.
+- `develop` no se puede borrar y, en la variante nueva, exige Drone en verde.
+- `release/*` exige Drone en verde.
+- `master` exige PR con 1 aprobación y Drone en verde, sin force-push ni borrado.
+
+Cambios:
+- **`estado_repos.py`** consulta con `gh` las reglas efectivas de `develop`, `master` y la rama actual. Muestra una línea «GitHub:» y avisa si la rama actual no se podrá subir por su nombre. `--sin-github` la omite y, sin red o sin sesión de `gh`, lo dice. Agrega 5 pruebas (19 en total), con las reglas reales de las dos variantes.
+- **`/commit-oas`:** si la rama tiene un nombre inválido, explica que GitHub rechaza el push y propone `git branch -m`. Al cerrar, dice qué exigirá GitHub para fusionar y da el comando para ver el estado de Drone.
+- **`/release-oas`:** checklist de Drone en verde en `release/X.Y.Z` y PR a `master` con aprobación. Lo mismo para `hotfix/`.
+- **`/code-review-oas`:** el estado de Drone del commit revisado y las reglas de la base. Si el CI está en rojo y la base lo exige, va como hallazgo.
+- **`/planificar-issue`:** la línea «GitHub:» de cada repo, y riesgos si el plan depende de fusionar a tiempo.
+- **AGENTS.md:** las reglas vigentes, que se consultan por repo en lugar de suponerse.
+
 ## 1.14.2 · 2026-11-19
 
 - **`endpoint-oas`: la forma plana con filtro es lineamiento para CRUD y MID, no una preferencia del MID.** En 1.14.1 la regla se limitó al MID y se presentaba como opción. Ahora es regla para los dos: un recurso que pertenece a otro va plano con el padre como filtro (`GET /comentario-accion?accion_mejora_id=…`), el id del padre va en el body del `POST`, y `/padre/{id}/hijo` no se usa para listar ni crear (solo las acciones de negocio sobre un padre se anidan). Si el usuario pide la forma anidada, la skill avisa que contradice el lineamiento; al revisar, una ruta anidada así se reporta con severidad Media. `planificar-issue` lleva cualquier otra forma a «Decisiones».

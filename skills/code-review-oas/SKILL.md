@@ -124,6 +124,7 @@ Invoca `/seguridad-oas` y aplica sus §1–§6 con el **diff del PR** como alcan
 
 Rama con prefijo `feature/`, `hotfix/` o `release/` y la base correcta (`feature/` → `develop`, `hotfix/` → `master`). Commits con `<etiqueta>: <descripción>` y etiqueta válida, sin atribución a IA (`Co-Authored-By`, "Generated with…", 🤖, menciones a Claude/IA).
 - Los commits de merge de `develop` hacia la rama son normales al actualizarla: no se señalan.
+- **CI y reglas de GitHub**: estado de Drone del commit revisado (`gh api repos/<owner>/<repo>/commits/<headRefOid>/status -q '.state + " " + ([.statuses[]|.context + ":" + .state]|join(","))'`) y reglas de la base (`gh api repos/<owner>/<repo>/rules/branches/<baseRefName>`). Si la base exige `required_status_checks` y Drone está en `failure`, el PR no se puede fusionar: va como hallazgo propio (con el enlace al pipeline). Si está `pending`, dilo en el resumen. Un PR a `master` necesita 1 aprobación: tu "Aprobar" cuenta.
 - Detalles de forma (mayúsculas, guion bajo en la rama, la URL de la issue al inicio en vez de al final) van **juntos en una sola nota opcional**, no uno por uno. Sólo la atribución a IA o un prefijo de rama inválido valen un comentario propio.
 
 ### 4.5 Corrección (bugs)

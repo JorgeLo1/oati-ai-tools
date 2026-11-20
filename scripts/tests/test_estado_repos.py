@@ -62,7 +62,41 @@ def sistema(nombre, args, env, esperados):
         print(f"   esperado {esperados}\n   obtenido {obtenidos}")
 
 
+def reglas():
+    """resumir_reglas con las reglas reales (rules/branches) de las dos variantes de rulesets de udistrital."""
+    global ok, fallos
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("estado_repos", SCRIPT)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    ci = {"type": "required_status_checks", "parameters": {"required_status_checks": [{"context": "continuous-integration/drone/push"}]}}
+    pr = {"type": "pull_request", "parameters": {"required_approving_review_count": 1}}
+    master = [{"type": "deletion"}, {"type": "non_fast_forward"}, pr, ci]
+    casos = [
+        ("variante develop-protection: develop sin CI, master con PR y Drone",
+         m.resumir_reglas("develop", [{"type": "deletion"}], master, []),
+         {"develop_ci": [], "develop_pr_aprobaciones": None, "master_ci": ["continuous-integration/drone/push"],
+          "master_pr_aprobaciones": 1, "rama_actual_bloqueada": False}),
+        ("variante develop-requires-green-ci: develop exige Drone",
+         m.resumir_reglas("develop", [ci, {"type": "deletion"}], master, []),
+         {"develop_ci": ["continuous-integration/drone/push"]}),
+        ("rama actual con nombre inválido (branch-naming: creation/update)",
+         m.resumir_reglas("develop", [], [], [{"type": "creation"}, {"type": "update"}]),
+         {"rama_actual_bloqueada": True, "master_pr_aprobaciones": None}),
+        ("repo sin rulesets", m.resumir_reglas("develop", [], [], []),
+         {"develop_ci": [], "master_ci": [], "rama_actual_bloqueada": False}),
+    ]
+    for nombre, obtenido, esperado in casos:
+        bien = all(obtenido.get(k) == v for k, v in esperado.items())
+        ok += bien
+        fallos += not bien
+        print(f"{'✅' if bien else '❌'} {nombre}")
+        if not bien:
+            print(f"   esperado {esperado}\n   obtenido {obtenido}")
+
+
 def main():
+    global ok, fallos
     base = tempfile.mkdtemp(prefix="oas-estado-")
     try:
         # remoto con develop y una rama de issue
@@ -75,6 +109,11 @@ def main():
 
         al_dia = clonar(base, remoto, "repo_al_dia")
         caso("en develop y al día", [al_dia], "al-dia", 0)
+        _, est = correr(al_dia)
+        sin_github = "protecciones" not in est[0] and "github" not in est[0]
+        ok += sin_github
+        fallos += not sin_github
+        print(f"{'✅' if sin_github else '❌'} remoto que no es de github.com: no consulta reglas de GitHub")
 
         atrasado = clonar(base, remoto, "repo_atrasado")
         otro = clonar(base, remoto, "repo_otro")  # empuja commits nuevos al remoto
@@ -134,6 +173,7 @@ def main():
                 ["raiz_crud", "raiz_mid"])
         sistema("--sistema con un repo sin sufijo de tipo: sólo él", ["--sistema", os.path.join(u, "SIS/Backend/demo")], env_u,
                 ["SIS/Backend/demo"])
+        reglas()
     finally:
         shutil.rmtree(base, ignore_errors=True)
     print(f"\n{ok}/{ok + fallos} OK")
