@@ -20,7 +20,7 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
 1. Stack: `package.json` con `@nestjs/mongoose` → **Nest + Mongo** (secciones 1–6). `go.mod` con `beego` → **Anexo Beego**.
 2. Gestor de paquetes por lockfile (`pnpm-lock.yaml` → `pnpm`, `package-lock.json` → `npm`). Node con `nvm use` si hay `.nvmrc`.
 3. Toma como **plantilla un recurso existente parecido** y copia su estilo exacto (carpeta `schema/` vs `schemas/`, mensajes, uso de `@Res()`, `FilterDto`, `FiltersService`, pipes). La coherencia con el repo prima sobre los ejemplos genéricos del lineamiento; si el repo se desvía del lineamiento en algo importante, menciónalo sin refactorizar lo existente.
-4. Si el cambio expone o modifica endpoints, valida rutas con las reglas de `/endpoint-oas`.
+4. Si el cambio expone o modifica endpoints, valida rutas con las reglas de `/endpoint-oas`. En especial, **sin variables en medio de la ruta**: un recurso que pertenece a otro va plano, con su propio nombre y el padre como filtro (`GET /comentario-accion?query=accion_mejora_id:<id>`; en el `POST`, el id del padre en el body), nunca `/accion-mejora/:id/comentario`. Los parámetros de ruta son solo el id del propio recurso (`/comentario-accion/:id`). Detalle en `/endpoint-oas`, «Recurso hijo: plano con filtro».
 
 ## 1. Modelado (lineamiento Mongo)
 

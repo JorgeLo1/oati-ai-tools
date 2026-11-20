@@ -2,6 +2,10 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.15.1 · 2026-11-20
+
+- **`/crud-oas` y `/mid-oas` repiten la regla de rutas sin variables en medio.** Un recurso que pertenece a otro va plano, con el padre como filtro. En el CRUD el filtro va con `query=`; en el MID es obligatorio y su ausencia responde `400`. En el `POST`, el id del padre va en el body. Nunca `/padre/:id/hijo`. Así se ve aunque solo se lea la skill del repo; el detalle sigue en `/endpoint-oas`.
+
 ## 1.15.0 · 2026-11-20
 
 Las reglas de GitHub (rulesets) que tienen los repos udistrital ya entran en el flujo. Las validé con `rules/branches` sobre `plan_anual_auditoria_mid` (variante `develop-protection`) y `gestion_contractual_crud` (variante `develop-requires-green-ci`):

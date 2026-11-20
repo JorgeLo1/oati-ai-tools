@@ -26,7 +26,7 @@ Fuentes (léelas con `gh api repos/udistrital/lineamientos_oas/contents/<ruta> -
    - `src/config/` → `configuration.ts` (variables de entorno `env()`) y `config.default|development|production.ts` (IDs de negocio por ambiente: `TIPO_PARAMETRO`, `ETIQUETAS_ROL`, …).
    - `LoggerService` → filtro global de excepciones + interceptores de Axios con `nestjs-pino`.
 3. Toma como plantilla el módulo existente más parecido y respeta su estilo.
-4. Valida rutas nuevas o modificadas con las reglas de `/endpoint-oas`.
+4. Valida rutas nuevas o modificadas con las reglas de `/endpoint-oas`. En especial, **sin variables en medio de la ruta**: un recurso que pertenece a otro va plano, con el mismo nombre que en el CRUD y el padre como filtro obligatorio (`GET /comentario-accion?accion_mejora_id=<id>`; sin el filtro responde `400`; en el `POST`, el id del padre en el body), nunca `/accion-mejora/:accionId/comentario`. Solo se anidan las acciones de negocio sobre un padre (`POST /plan-mejoramiento/:id/aprobar`). Detalle en `/endpoint-oas`, «Recurso hijo: plano con filtro».
 
 ## 1. Capas (lineamiento "lógica orientada a funciones")
 
