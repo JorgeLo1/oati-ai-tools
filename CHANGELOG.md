@@ -2,6 +2,10 @@
 
 Formato: versión (SemVer, la de `.claude-plugin/plugin.json`) · fecha · cambios.
 
+## 1.15.2 · 2026-11-23
+
+- **`/doc-issue-oas` publica el comentario con las capturas.** Las guarda en `~/docs-issues/capturas-<N>/`, las referencia en el Markdown con `![alt](./capturas-<N>/archivo.png)` y publica desde `~/docs-issues` con `gh issue comment <N> --body-file … --attach <imagen>` (una vez por imagen, hasta 50). `gh` (2.100 o superior) sube cada imagen y reescribe la referencia a su URL. La skill avisa que las capturas pueden traer datos reales del ambiente de pruebas.
+
 ## 1.15.1 · 2026-11-20
 
 - **`/crud-oas` y `/mid-oas` repiten la regla de rutas sin variables en medio.** Un recurso que pertenece a otro va plano, con el padre como filtro. En el CRUD el filtro va con `query=`; en el MID es obligatorio y su ausencia responde `400`. En el `POST`, el id del padre va en el body. Nunca `/padre/:id/hijo`. Así se ve aunque solo se lea la skill del repo; el detalle sigue en `/endpoint-oas`.

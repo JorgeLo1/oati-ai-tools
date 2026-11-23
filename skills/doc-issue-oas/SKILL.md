@@ -101,7 +101,7 @@ Después:
 
 ## Pruebas realizadas
 
-<!-- Si se corrió /pruebas-funcionales-oas, usa su informe (.claude/docs/pruebas/<rama>.md): una prueba por criterio, con la ruta de su captura en lugar del marcador. -->
+<!-- Si se corrió /pruebas-funcionales-oas, usa su informe (.claude/docs/pruebas/<rama>.md): una prueba por criterio, con su captura como imagen `![alt](./capturas-<N>/<archivo>.png)` en lugar del marcador (ver Paso 4). -->
 
 ### Prueba 1 — <qué se valida>
 
@@ -133,12 +133,18 @@ Después:
 ## Paso 4 — Entregar
 
 1. Guarda el archivo en `~/docs-issues/issue-<N>-<YYYY-MM-DD>.md` (crea la carpeta si no existe). No lo guardes dentro de los repos.
-2. Muestra el Markdown completo en la respuesta y la ruta del archivo.
-3. Lista los marcadores de captura (`<!-- Insertar captura ... -->`) y los `TODO` pendientes para que el usuario los complete.
-4. **Ofrece** publicarlo como comentario en la issue y hazlo **solo si el usuario lo confirma explícitamente**:
+2. **Capturas**: cópialas a `~/docs-issues/capturas-<N>/` (nombres cortos y numerados, p. ej. `f1-1-fuente-por-defecto.png`) y, en el Markdown, reemplaza cada marcador `<!-- Insertar captura ... -->` por una imagen con ruta relativa a `~/docs-issues`: `![texto alternativo](./capturas-<N>/f1-1-fuente-por-defecto.png)`. Si una captura no existe, deja el marcador y avísalo.
+3. Muestra el Markdown completo en la respuesta y la ruta del archivo; lista los marcadores y `TODO` que sigan pendientes.
+4. **Ofrece** publicarlo como comentario en la issue y hazlo **solo si el usuario lo confirma explícitamente**. `gh` (≥ 2.100) sube las imágenes con `--attach` y reescribe en el cuerpo las referencias `![alt](./ruta.png)` para que apunten al archivo subido; una captura adjunta que el cuerpo no referencia se agrega al final. Se ejecuta **desde `~/docs-issues`** para que las rutas relativas resuelvan, con un `--attach` por imagen (hasta 50) y el texto alternativo opcional después de `#`:
 
 ```bash
-gh issue comment <N> -R udistrital/sisifo_documentacion --body-file ~/docs-issues/issue-<N>-<YYYY-MM-DD>.md
+cd ~/docs-issues
+gh issue comment <N> -R udistrital/sisifo_documentacion \
+  --body-file issue-<N>-<YYYY-MM-DD>.md \
+  --attach ./capturas-<N>/f1-1-<nombre>.png \
+  --attach './capturas-<N>/f1-2-<nombre>.png#Texto alternativo'
 ```
+
+   Comprueba antes `gh issue comment --help | grep -- --attach`; si la versión de `gh` no lo trae, pide al usuario actualizarla (o que arrastre las imágenes al editor de GitHub). Sin imágenes basta `--body-file`. Las capturas pueden mostrar datos reales del ambiente de pruebas (usuarios, expedientes): revísalas antes de publicar.
 
 Nunca edites el cuerpo de la issue, ni marques casillas, ni cambies el estado en el proyecto sin pedido explícito.
